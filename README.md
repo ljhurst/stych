@@ -58,6 +58,12 @@ The project also needs:
   apply role trusts `environment:prod`, so this is what keeps other branches
   from applying
 
+A project's read policy must allow every read Terraform's refresh makes. If a
+read is denied, the plan shows that resource as deleted and plans to recreate
+it. For an S3 bucket this includes `s3:ListBucket`, because Terraform checks
+the bucket exists with HeadBucket. Any plan that destroys or replaces
+resources lists them in a warning at the top of the PR comment.
+
 ## Applying `infra/`
 
 `infra/` grants every other project its permissions, so it is applied from a

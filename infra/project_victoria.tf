@@ -79,7 +79,7 @@ data "aws_iam_policy_document" "victoria_read" {
 
   statement {
     sid       = "ReadWikiBucket"
-    actions   = ["s3:GetBucket*", "s3:GetAccelerateConfiguration", "s3:GetLifecycleConfiguration", "s3:GetReplicationConfiguration", "s3:GetEncryptionConfiguration"]
+    actions   = ["s3:ListBucket", "s3:GetBucket*", "s3:GetAccelerateConfiguration", "s3:GetLifecycleConfiguration", "s3:GetReplicationConfiguration", "s3:GetEncryptionConfiguration"]
     resources = [local.victoria.wiki_bucket]
   }
 
