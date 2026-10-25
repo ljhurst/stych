@@ -15,8 +15,8 @@ locals {
   permission_set_policies = ["read", "write", "operate"]
 
   ci_subjects = {
-    plan  = "repo:${var.repo}:pull_request"
-    apply = "repo:${var.repo}:environment:prod"
+    plan  = "${var.github_subject_prefix}:pull_request"
+    apply = "${var.github_subject_prefix}:environment:prod"
   }
 }
 

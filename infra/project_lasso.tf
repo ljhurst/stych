@@ -16,12 +16,12 @@ locals {
 module "lasso" {
   source = "./modules/project-access"
 
-  name              = "lasso"
-  repo              = "ljhurst/lasso"
-  account_id        = local.account_id
-  oidc_provider_arn = aws_iam_openid_connect_provider.github.arn
-  sso_instance_arn  = local.sso_instance_arn
-  sso_user_id       = local.sso_user_id
+  name                  = "lasso"
+  github_subject_prefix = "repo:ljhurst@9142868/lasso@1341558720"
+  account_id            = local.account_id
+  oidc_provider_arn     = aws_iam_openid_connect_provider.github.arn
+  sso_instance_arn      = local.sso_instance_arn
+  sso_user_id           = local.sso_user_id
 
   boundary_policy_json = data.aws_iam_policy_document.lasso_boundary.json
   read_policy_json     = data.aws_iam_policy_document.lasso_read.json
