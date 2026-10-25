@@ -56,7 +56,7 @@ secret.
 | 5 | Porto and Victoria join | porto, victoria | 4 |
 | 6 | Fife, train-spotting, bracket-clash: roles move here; Fife drops `ignore_changes`; static-site workflow for S3 + CloudFront | each | 4 |
 
-Each row becomes an issue in its repo. Every project's state is checked for
+Each row is an issue in its repo, tracked in #5. Every project's state is checked for
 secrets as part of joining.
 
 ## Not doing yet
