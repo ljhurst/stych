@@ -47,6 +47,8 @@ jobs:
       apply-role-arn: arn:aws:iam::755958650241:role/stych/<name>-ci-apply
       build-command: scripts/build_lambda.sh   # optional, run from the repo root
       node-version-file: .node-version         # optional
+      go-version-file: go.mod                  # optional
+      setup-uv: true                           # optional, for uv-built Python
 ```
 
 The project also needs:

@@ -83,7 +83,7 @@ read state.
 | 4 | `project-access` module, Lasso end to end: boundary on its Lambda role, FullAccess policies off `lasso-deploy` (done) | stych, lasso | 3 |
 | 5 | `terraform.yml` v1 (done) | stych | — |
 | 6 | Lasso joins: tfvars as committed file or vars, caller workflow, first CI apply (done) | lasso | 1, 4, 5 |
-| 7 | Porto and Victoria join | porto, victoria | 6 |
+| 7 | Porto and Victoria join; `terraform.yml` v1.1 adds `go-version-file` and `setup-uv` for their Go and uv builds | porto, victoria | 6 |
 | 8 | Fife, train-spotting, bracket-clash: roles move here; Fife drops `ignore_changes`; static-site workflow for S3 + CloudFront | each | 6 |
 | 9 | aboutme and dio join | aboutme, dio | 6 |
 
