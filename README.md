@@ -136,7 +136,34 @@ Pass a project name to check just that one, and an extra checks file to add proj
 The state bucket and the OIDC provider have `prevent_destroy`: every
 project's state and CI depend on them.
 
+## Repository settings
+
+`github/` manages each repo's GitHub settings with the `integrations/github`
+provider. Every repo in `github/repos.tf` gets:
+
+- a `main` ruleset: no deletion, no force-push, changes through a PR, and the
+  required checks (not on private repos, which the free plan excludes)
+- a `prod` environment that only `main` may use, for repos that deploy
+- read-only workflow tokens that can't approve pull requests
+- Dependabot vulnerability alerts and security updates
+
+stych's release tags (`v*.*.*`) are protected by their own ruleset. Fork
+pull request approval has no Terraform resource, so a script sets it. Apply
+both from a laptop:
+
+```bash
+export AWS_PROFILE=luke-hurst-admin GITHUB_TOKEN=$(gh auth token)
+terraform -chdir=github init
+terraform -chdir=github plan -out=github.tfplan
+terraform -chdir=github apply github.tfplan
+scripts/apply-fork-approval.sh
+```
+
 ## Adding a project
+
+Use the `stych-onboard` skill, which walks through every step. Install it
+once with `ln -s ~/learning/stych/.claude/skills/stych-onboard
+~/.claude/skills/stych-onboard`.
 
 `infra/project_<name>.tf` holds only what is specific to the project: its
 ARNs and its boundary, read, write and operate statements. The module adds
