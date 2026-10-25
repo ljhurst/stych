@@ -16,7 +16,7 @@ for repo in $(terraform -chdir=github output -json public_repos | jq -r '.[]'); 
   if [ "$current" = "$want" ]; then
     echo "${repo}: ${want}"
   else
-    gh api -X PUT "$endpoint" -f approval_policy="$want" > /dev/null
+    gh api -X PUT "$endpoint" -f approval_policy="$want" >/dev/null
     echo "${repo}: ${current} -> ${want}"
   fi
 done

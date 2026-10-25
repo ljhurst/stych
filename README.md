@@ -35,12 +35,14 @@ on:
     branches: [main]
 
 permissions:
-  id-token: write
   contents: read
-  pull-requests: write
 
 jobs:
   terraform:
+    permissions:
+      id-token: write       # assume the plan or apply role
+      contents: read
+      pull-requests: write  # post the plan comment
     uses: ljhurst/stych/.github/workflows/terraform.yml@v1
     with:
       plan-role-arn: arn:aws:iam::755958650241:role/stych/<name>-ci-plan
@@ -51,7 +53,8 @@ jobs:
       setup-uv: true                           # optional, for uv-built Python
 ```
 
-The project also needs:
+Grant `id-token` and `pull-requests` only on the jobs that call the shared
+workflows; zizmor flags them at the workflow level. The project also needs:
 
 - its roles in `infra/project_<name>.tf`, applied (see below)
 - a `prod` environment whose deployment branches are limited to `main`: the
@@ -73,6 +76,10 @@ the PR previewed:
 ```yaml
   site:
     needs: terraform
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
     uses: ljhurst/stych/.github/workflows/static-site.yml@v1
     with:
       plan-role-arn: arn:aws:iam::755958650241:role/stych/<name>-ci-plan

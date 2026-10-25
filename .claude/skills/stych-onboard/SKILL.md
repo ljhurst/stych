@@ -43,15 +43,17 @@ Plans read state, and plan comments on public repos are public.
 6. Run `scripts/verify-access.sh <name>`. It must be all green.
 
 ## 3. GitHub settings in stych
-1. Add the repo to `github/repos.tf`. Import its existing ruleset and `prod`
-   policy IDs if it has them.
+1. Add the repo to `github/repos.tf`. If it already has a `main` ruleset or a
+   `prod` environment, add temporary `import` blocks for them, then remove
+   the blocks once applied.
 2. Plan; the user applies (README "Repository settings").
 3. Run `scripts/apply-fork-approval.sh`.
 
 ## 4. Workflows in the project
 - `.github/workflows/deploy.yml` calls `terraform.yml@v1`, plus
   `static-site.yml@v1` for S3 sites (README "Deploying a project" and
-  "Deploying a static site").
+  "Deploying a static site"). Grant `id-token` and `pull-requests` on those
+  calling jobs only.
 - `.github/workflows/check.yml` calls `pre-commit.yml@v1` (README
   "Checking a project").
 - Commit the non-secret `infra/terraform.tfvars`.
