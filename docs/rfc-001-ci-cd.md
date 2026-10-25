@@ -30,7 +30,7 @@ read state.
 
 | Piece | What it is |
 |---|---|
-| `.github/workflows/terraform.yml` | Reusable (`workflow_call`). Inputs: infra directory, build command, plan role ARN, apply role ARN. Builds, plans, comments the plan on the PR; on `main`, applies. One `concurrency` group per project. |
+| `.github/workflows/terraform.yml` | Reusable (`workflow_call`). Inputs: plan and apply role ARNs, infra directory, build command, Node version file, Terraform version. On a PR: builds, plans, and keeps one plan comment up to date. On the default branch: builds, plans and applies in the `prod` environment. One `concurrency` group per PR for plans, per repo for applies. |
 | `infra/` foundation | The state bucket `lj-tf-state` (versioning, encryption, old-version expiry, TLS-only policy) and the GitHub OIDC provider. Both imported, both `prevent_destroy`. |
 | `infra/project_<name>.tf` | One file per managed project: its policy documents, written as ARN patterns per service, and its `project-access` module call. |
 | `infra/modules/project-access` | Per project: four policies, the `<name>-deploy` SSO permission set, and two CI roles under `/stych/`. |
@@ -57,6 +57,9 @@ read state.
 
 - The plan job runs only when the PR's head branch is in the same repo, so fork
   PRs never reach the plan role.
+- Each project's `prod` environment only allows the default branch. The apply
+  role trusts `environment:prod`, so that rule is what keeps other branches
+  from applying.
 - `stych/infra` is applied from a laptop with `luke-hurst-admin` only. It
   grants every other permission, so CI here lints and plans but never applies.
 - The `luke-hurst-admin` permission set stays outside stych as emergency
@@ -77,8 +80,8 @@ read state.
 | 1 | Move SSM secret values out of Terraform state (done) | lasso, porto, victoria | — |
 | 2 | Hand the GitHub OIDC provider over to stych (done) | aboutme | — |
 | 3 | Foundation: import the state bucket and OIDC provider (done) | stych | 2 |
-| 4 | `project-access` module, Lasso end to end: boundary on its Lambda role, FullAccess policies off `lasso-deploy` | stych, lasso | 3 |
-| 5 | `terraform.yml` v1 and the repo access setting | stych | — |
+| 4 | `project-access` module, Lasso end to end: boundary on its Lambda role, FullAccess policies off `lasso-deploy` (done) | stych, lasso | 3 |
+| 5 | `terraform.yml` v1 | stych | — |
 | 6 | Lasso joins: tfvars as committed file or vars, caller workflow, first CI apply | lasso | 1, 4, 5 |
 | 7 | Porto and Victoria join | porto, victoria | 6 |
 | 8 | Fife, train-spotting, bracket-clash: roles move here; Fife drops `ignore_changes`; static-site workflow for S3 + CloudFront | each | 6 |

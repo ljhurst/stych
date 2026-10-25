@@ -22,6 +22,40 @@ production.
 - `infra/` — the state bucket, the GitHub OIDC provider, and each project's access.
 - `docs/` — design decisions, starting with [RFC 001: CI/CD](docs/rfc-001-ci-cd.md).
 
+## Deploying a project
+
+A project calls the shared workflow, which plans on every PR (posting the plan
+as a comment) and applies on merge to the default branch:
+
+```yaml
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  id-token: write
+  contents: read
+  pull-requests: write
+
+jobs:
+  terraform:
+    uses: ljhurst/stych/.github/workflows/terraform.yml@v1
+    with:
+      plan-role-arn: arn:aws:iam::755958650241:role/stych/<name>-ci-plan
+      apply-role-arn: arn:aws:iam::755958650241:role/stych/<name>-ci-apply
+      build-command: scripts/build_lambda.sh   # optional, run from the repo root
+      node-version-file: .node-version         # optional
+```
+
+The project also needs:
+
+- its roles in `infra/project_<name>.tf`, applied (see below)
+- a `prod` environment whose deployment branches are limited to `main`: the
+  apply role trusts `environment:prod`, so this is what keeps other branches
+  from applying
+
 ## Applying `infra/`
 
 `infra/` grants every other project its permissions, so it is applied from a

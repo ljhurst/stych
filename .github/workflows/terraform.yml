@@ -1,0 +1,166 @@
+---
+name: Terraform
+
+# yamllint disable-line rule:truthy
+on:
+  workflow_call:
+    inputs:
+      plan-role-arn:
+        description: Role the PR plan job assumes (read-only)
+        type: string
+        required: true
+      apply-role-arn:
+        description: Role the apply job on the default branch assumes
+        type: string
+        required: true
+      working-directory:
+        description: Directory holding the Terraform configuration
+        type: string
+        default: infra
+      build-command:
+        description: Command run from the repo root before planning, e.g. to build Lambda zips
+        type: string
+        default: ""
+      node-version-file:
+        description: Set to install Node from this version file before building
+        type: string
+        default: ""
+      terraform-version:
+        type: string
+        default: "1.17.0"
+      aws-region:
+        type: string
+        default: us-east-1
+
+defaults:
+  run:
+    shell: bash
+
+env:
+  WORKDIR: ${{ inputs.working-directory }}
+  BUILD_COMMAND: ${{ inputs.build-command }}
+
+jobs:
+  plan:
+    # Fork PRs never reach the plan role.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      pull-requests: write
+    concurrency:
+      group: terraform-plan-${{ github.repository }}-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - if: inputs.node-version-file != ''
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: ${{ inputs.node-version-file }}
+
+      - name: Build
+        if: inputs.build-command != ''
+        run: eval "$BUILD_COMMAND"
+
+      - uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ inputs.plan-role-arn }}
+          role-session-name: stych-plan-${{ github.run_id }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - uses: hashicorp/setup-terraform@v4.0.1
+        with:
+          terraform_version: ${{ inputs.terraform-version }}
+          terraform_wrapper: false
+
+      - name: Plan
+        run: |
+          terraform -chdir="$WORKDIR" init -input=false -no-color
+          terraform -chdir="$WORKDIR" plan -input=false -no-color -out=tfplan | tee "$RUNNER_TEMP/plan.log"
+
+      - name: Comment plan on the PR
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR: ${{ github.event.pull_request.number }}
+          REPO: ${{ github.repository }}
+        run: |
+          marker="<!-- stych:terraform-plan:$WORKDIR -->"
+          summary=$(grep -E '^(Plan:|No changes)' "$RUNNER_TEMP/plan.log" | tail -1)
+          body="$RUNNER_TEMP/comment.md"
+          {
+            echo "$marker"
+            echo "### Terraform plan for \`$WORKDIR\`"
+            echo
+            echo "**$summary**"
+            echo
+            echo "<details><summary>Full plan</summary>"
+            echo
+            echo '```'
+            terraform -chdir="$WORKDIR" show -no-color tfplan | head -c 60000
+            echo '```'
+            echo "</details>"
+          } > "$body"
+          cat "$body" >> "$GITHUB_STEP_SUMMARY"
+          id=$(gh api "repos/$REPO/issues/$PR/comments" --paginate \
+            --jq ".[] | select(.body | startswith(\"$marker\")) | .id" | head -1)
+          if [ -n "$id" ]; then
+            gh api -X PATCH "repos/$REPO/issues/comments/$id" -F body=@"$body" > /dev/null
+          else
+            gh pr comment "$PR" --repo "$REPO" --body-file "$body"
+          fi
+
+  apply:
+    if: >-
+      github.event_name == 'push' &&
+      github.ref_name == github.event.repository.default_branch
+    runs-on: ubuntu-latest
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+    concurrency:
+      group: terraform-apply-${{ github.repository }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - if: inputs.node-version-file != ''
+        uses: actions/setup-node@v7.1.0
+        with:
+          node-version-file: ${{ inputs.node-version-file }}
+
+      - name: Build
+        if: inputs.build-command != ''
+        run: eval "$BUILD_COMMAND"
+
+      - uses: aws-actions/configure-aws-credentials@v6.3.0
+        with:
+          role-to-assume: ${{ inputs.apply-role-arn }}
+          role-session-name: stych-apply-${{ github.run_id }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - uses: hashicorp/setup-terraform@v4.0.1
+        with:
+          terraform_version: ${{ inputs.terraform-version }}
+          terraform_wrapper: false
+
+      - name: Plan
+        run: |
+          terraform -chdir="$WORKDIR" init -input=false -no-color
+          terraform -chdir="$WORKDIR" plan -input=false -no-color -out=tfplan | tee "$RUNNER_TEMP/plan.log"
+          {
+            echo "### Terraform apply for \`$WORKDIR\`"
+            echo
+            echo "**$(grep -E '^(Plan:|No changes)' "$RUNNER_TEMP/plan.log" | tail -1)**"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Apply
+        run: terraform -chdir="$WORKDIR" apply -input=false -no-color tfplan
