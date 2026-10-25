@@ -120,12 +120,10 @@ export AWS_PROFILE=luke-hurst-admin
 terraform -chdir=infra init
 terraform -chdir=infra plan -out=stych.tfplan
 terraform -chdir=infra apply stych.tfplan
-for p in $(sed -n 's/^ *name *= *"\([a-z0-9-]*\)"$/\1/p' infra/project_*.tf); do
-  scripts/verify-access.sh "$p"
-done
+scripts/verify-access.sh
 ```
 
-`scripts/verify-access.sh` runs each project's three principals through the
+`scripts/verify-access.sh` runs every project's three principals through the
 standard allow/deny matrix:
 
 - own state allowed; other projects' state and secrets denied
@@ -133,7 +131,7 @@ standard allow/deny matrix:
 - no editing its own CI roles
 - the plan role can't write
 
-Add project-specific checks with a second argument (see the script header).
+Pass a project name to check just that one, and an extra checks file to add project-specific checks (see the script header).
 
 The state bucket and the OIDC provider have `prevent_destroy`: every
 project's state and CI depend on them.

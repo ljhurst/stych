@@ -3,7 +3,8 @@
 # roles) against the access every stych project must have and must not have,
 # using the IAM policy simulator. Run it after every `infra/` apply.
 #
-# Usage: scripts/verify-access.sh <project> [extra-checks-file]
+# Usage: scripts/verify-access.sh [<project> [extra-checks-file]]
+#   With no project, checks every project in infra/project_*.tf.
 #   extra-checks-file: lines of "<sso|plan|apply> <allow|deny> <action> <resource-arn>"
 #
 # Needs credentials that can call iam:SimulatePrincipalPolicy, e.g. the
@@ -12,7 +13,17 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
-project="${1:?usage: $0 <project> [extra-checks-file]}"
+projects=$(sed -n 's/^ *name *= *"\([a-z0-9-]*\)"$/\1/p' infra/project_*.tf)
+
+if [ $# -eq 0 ]; then
+  status=0
+  for p in $projects; do
+    "$0" "$p" || status=1
+  done
+  exit "$status"
+fi
+
+project=$1
 extra="${2:-}"
 
 account=$(aws sts get-caller-identity --query Account --output text)
@@ -31,7 +42,7 @@ if [ -z "$sso" ]; then
   exit 1
 fi
 
-others=$(sed -n 's/^ *name *= *"\([a-z0-9-]*\)"$/\1/p' infra/project_*.tf | grep -vx "$project")
+others=$(grep -vx "$project" <<< "$projects")
 
 total=0
 failed=0
