@@ -4,6 +4,20 @@
 stitches every project together. Every release crosses the Styx on its way to
 production.
 
+```text
+   the living                       the Styx                       the underworld
+  (laptops, PRs)                                                  (production AWS)
+
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+   lasso            ~~~~~~~                o   /          ~~~~~~~       Lambda
+   porto   ---->   ~~~~~~~                /|\_/            ~~~~~~~ ---> DynamoDB
+   fife             ~~~~~~~      _________/_\_________    ~~~~~~~       S3
+   ...               ~~~~~~~~~~~~\_______stych_______/~~~~~~~~~~        CloudFront
+                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+          every crossing is paid with an obol: one short-lived OIDC token
+```
+
 - `.github/workflows/` — reusable workflows that projects call to plan and apply.
 - `infra/` — the state bucket, the GitHub OIDC provider, and each project's access.
 - `docs/` — design decisions, starting with [RFC 001: CI/CD](docs/rfc-001-ci-cd.md).

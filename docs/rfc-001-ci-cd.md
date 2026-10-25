@@ -32,13 +32,28 @@ read state.
 |---|---|
 | `.github/workflows/terraform.yml` | Reusable (`workflow_call`). Inputs: infra directory, build command, plan role ARN, apply role ARN. Builds, plans, comments the plan on the PR; on `main`, applies. One `concurrency` group per project. |
 | `infra/` foundation | The state bucket `lj-tf-state` (versioning, encryption, old-version expiry, TLS-only policy) and the GitHub OIDC provider. Both imported, both `prevent_destroy`. |
-| `infra/projects.tf` | One map, repo → resource name prefix. The only list of managed projects. |
-| `infra/modules/project-access` | Per project: one access policy, attached to its `<project>-deploy` SSO permission set (you, locally) and to its apply role (CI), plus a read-only plan role. |
+| `infra/project_<name>.tf` | One file per managed project: its policy documents, written as ARN patterns per service, and its `project-access` module call. |
+| `infra/modules/project-access` | Per project: four policies, the `<name>-deploy` SSO permission set, and two CI roles under `/stych/`. |
 
-| Role | Trusted `sub` | Permissions |
+| Policy | Grants | Used by |
 |---|---|---|
-| plan | `repo:ljhurst/<repo>:pull_request` | Read-only, plus that project's state |
-| apply | `repo:ljhurst/<repo>:environment:prod` | The project's access policy |
+| `<name>-boundary` | The most any of the project's workload roles may do | Permissions boundary on those roles |
+| `<name>-deploy-read` | Read the project's resources and its state; take the state lock | Plan role, apply role, permission set |
+| `<name>-deploy-write` | Create, change and delete the project's resources; write state; manage `<name>-*` roles only with the boundary attached | Apply role, permission set |
+| `<name>-operate` | Local-only access: table data, secrets, logs | Permission set |
+
+| Role | Trusted `sub` | Policies |
+|---|---|---|
+| `<name>-ci-plan` | `repo:ljhurst/<repo>:pull_request` | read |
+| `<name>-ci-apply` | `repo:ljhurst/<repo>:environment:prod` | read + write |
+
+- The deploy policies (read + write) are the same for you and for CI, so the
+  two can't drift. Only people get operate, so CI never reads data or secrets.
+- A workload role can only be created or changed with the project's boundary
+  attached, and the boundary can't be removed. Deploy access can't reach
+  admin by editing the role its Lambda runs as.
+- CI roles live under `/stych/`, outside every project's `<name>-*` role
+  pattern, so a project can't edit its own CI roles.
 
 - The plan job runs only when the PR's head branch is in the same repo, so fork
   PRs never reach the plan role.
@@ -57,9 +72,9 @@ read state.
 | # | Work | Repo | Needs |
 |---|---|---|---|
 | 1 | Move SSM secret values out of Terraform state (done) | lasso, porto, victoria | — |
-| 2 | Hand the GitHub OIDC provider over to stych | aboutme | — |
-| 3 | Foundation: import the state bucket and OIDC provider | stych | 2 |
-| 4 | `project-access` module, starting with Lasso | stych | 3 |
+| 2 | Hand the GitHub OIDC provider over to stych (done) | aboutme | — |
+| 3 | Foundation: import the state bucket and OIDC provider (done) | stych | 2 |
+| 4 | `project-access` module, Lasso end to end: boundary on its Lambda role, FullAccess policies off `lasso-deploy` | stych, lasso | 3 |
 | 5 | `terraform.yml` v1 and the repo access setting | stych | — |
 | 6 | Lasso joins: tfvars as committed file or vars, caller workflow, first CI apply | lasso | 1, 4, 5 |
 | 7 | Porto and Victoria join | porto, victoria | 6 |
