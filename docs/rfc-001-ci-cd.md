@@ -81,8 +81,8 @@ read state.
 | 2 | Hand the GitHub OIDC provider over to stych (done) | aboutme | — |
 | 3 | Foundation: import the state bucket and OIDC provider (done) | stych | 2 |
 | 4 | `project-access` module, Lasso end to end: boundary on its Lambda role, FullAccess policies off `lasso-deploy` (done) | stych, lasso | 3 |
-| 5 | `terraform.yml` v1 | stych | — |
-| 6 | Lasso joins: tfvars as committed file or vars, caller workflow, first CI apply | lasso | 1, 4, 5 |
+| 5 | `terraform.yml` v1 (done) | stych | — |
+| 6 | Lasso joins: tfvars as committed file or vars, caller workflow, first CI apply (done) | lasso | 1, 4, 5 |
 | 7 | Porto and Victoria join | porto, victoria | 6 |
 | 8 | Fife, train-spotting, bracket-clash: roles move here; Fife drops `ignore_changes`; static-site workflow for S3 + CloudFront | each | 6 |
 | 9 | aboutme and dio join | aboutme, dio | 6 |
