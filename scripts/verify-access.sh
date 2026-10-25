@@ -42,7 +42,7 @@ if [ -z "$sso" ]; then
   exit 1
 fi
 
-others=$(grep -vx "$project" <<< "$projects")
+others=$(grep -vx "$project" <<<"$projects")
 
 total=0
 failed=0
@@ -52,16 +52,16 @@ check() {
   shift 4
   local arn decision got
   case "$who" in
-    sso) arn=$sso ;;
-    plan) arn=$plan ;;
-    apply) arn=$apply ;;
+  sso) arn=$sso ;;
+  plan) arn=$plan ;;
+  apply) arn=$apply ;;
   esac
   decision=$(aws iam simulate-principal-policy --policy-source-arn "$arn" \
     --action-names "$action" --resource-arns "$resource" "$@" \
     --query 'EvaluationResults[0].EvalDecision' --output text)
   case "$decision" in
-    allowed) got=allow ;;
-    *) got=deny ;;
+  allowed) got=allow ;;
+  *) got=deny ;;
   esac
   total=$((total + 1))
   if [ "$got" != "$want" ]; then
@@ -98,7 +98,7 @@ if [ -n "$extra" ]; then
   while read -r who want action resource; do
     case "$who" in '' | \#*) continue ;; esac
     check "$who" "$want" "$action" "$resource"
-  done < "$extra"
+  done <"$extra"
 fi
 
 echo "${project}: $((total - failed)) of ${total} as expected"
