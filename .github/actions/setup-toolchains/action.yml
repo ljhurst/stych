@@ -1,0 +1,39 @@
+---
+name: Set up toolchains
+description: Install only the toolchains a project asks for
+
+inputs:
+  node-version-file:
+    description: Install Node from this version file
+    default: ""
+  go-version-file:
+    description: Install Go from this version file (e.g. go.mod)
+    default: ""
+  setup-uv:
+    description: Install uv; it fetches the Python version a build asks for
+    default: "false"
+  terraform-version:
+    description: Install this Terraform version
+    default: ""
+
+runs:
+  using: composite
+  steps:
+    - if: inputs.node-version-file != ''
+      uses: actions/setup-node@v7.1.0
+      with:
+        node-version-file: ${{ inputs.node-version-file }}
+
+    - if: inputs.go-version-file != ''
+      uses: actions/setup-go@v7.0.0
+      with:
+        go-version-file: ${{ inputs.go-version-file }}
+
+    - if: inputs.setup-uv == 'true'
+      uses: astral-sh/setup-uv@v10.3.2
+
+    - if: inputs.terraform-version != ''
+      uses: hashicorp/setup-terraform@v4.0.1
+      with:
+        terraform_version: ${{ inputs.terraform-version }}
+        terraform_wrapper: false
