@@ -1,2 +1,3 @@
 .terraform/
 *.tfplan
+infra/modules/**/.terraform.lock.hcl
