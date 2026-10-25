@@ -63,7 +63,7 @@ jobs:
       group: terraform-plan-${{ github.repository }}-${{ github.event.pull_request.number }}
       cancel-in-progress: true
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
 
@@ -78,7 +78,7 @@ jobs:
         if: inputs.build-command != ''
         run: eval "$BUILD_COMMAND"
 
-      - uses: aws-actions/configure-aws-credentials@v6.3.0
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd  # v6.3.0
         with:
           role-to-assume: ${{ inputs.plan-role-arn }}
           role-session-name: stych-plan-${{ github.run_id }}
@@ -142,7 +142,7 @@ jobs:
       group: terraform-apply-${{ github.repository }}
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
           persist-credentials: false
 
@@ -157,7 +157,7 @@ jobs:
         if: inputs.build-command != ''
         run: eval "$BUILD_COMMAND"
 
-      - uses: aws-actions/configure-aws-credentials@v6.3.0
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd  # v6.3.0
         with:
           role-to-assume: ${{ inputs.apply-role-arn }}
           role-session-name: stych-apply-${{ github.run_id }}
