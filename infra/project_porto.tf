@@ -1,15 +1,13 @@
 locals {
   porto = {
-    functions      = "arn:aws:lambda:us-east-1:${local.account_id}:function:lj-porto-mcp*"
-    lwa_layer      = "arn:aws:lambda:us-east-1:753240598075:layer:LambdaAdapterLayerArm64:*"
-    locks_table    = "arn:aws:dynamodb:us-east-1:${local.account_id}:table/porto-locks"
-    log_group      = "arn:aws:logs:us-east-1:${local.account_id}:log-group:/aws/lambda/lj-porto-mcp*"
+    functions      = "arn:aws:lambda:${local.region}:${local.account_id}:function:lj-porto-mcp*"
+    lwa_layer      = "arn:aws:lambda:${local.region}:753240598075:layer:LambdaAdapterLayerArm64:*"
+    locks_table    = "arn:aws:dynamodb:${local.region}:${local.account_id}:table/porto-locks"
+    log_group      = "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/lambda/lj-porto-mcp*"
     roles          = "arn:aws:iam::${local.account_id}:role/porto-*"
-    groups         = "arn:aws:resource-groups:us-east-1:${local.account_id}:group/porto-*"
-    ssm_params     = "arn:aws:ssm:us-east-1:${local.account_id}:parameter/porto/*"
-    session_param  = "arn:aws:ssm:us-east-1:${local.account_id}:parameter/porto/sommething/session"
-    state_key      = "${aws_s3_bucket.state.arn}/porto/terraform.tfstate"
-    boundary_arn   = "arn:aws:iam::${local.account_id}:policy/stych/porto-boundary"
+    groups         = "arn:aws:resource-groups:${local.region}:${local.account_id}:group/porto-*"
+    ssm_params     = "arn:aws:ssm:${local.region}:${local.account_id}:parameter/porto/*"
+    session_param  = "arn:aws:ssm:${local.region}:${local.account_id}:parameter/porto/sommething/session"
     table_data_ops = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:Query", "dynamodb:Scan", "dynamodb:ConditionCheckItem"]
   }
 }
@@ -23,21 +21,12 @@ module "porto" {
   oidc_provider_arn     = aws_iam_openid_connect_provider.github.arn
   sso_instance_arn      = local.sso_instance_arn
   sso_user_id           = local.sso_user_id
+  state_bucket_arn      = aws_s3_bucket.state.arn
 
   boundary_policy_json = data.aws_iam_policy_document.porto_boundary.json
   read_policy_json     = data.aws_iam_policy_document.porto_read.json
   write_policy_json    = data.aws_iam_policy_document.porto_write.json
   operate_policy_json  = data.aws_iam_policy_document.porto_operate.json
-}
-
-import {
-  to = module.porto.aws_ssoadmin_permission_set.deploy
-  id = "arn:aws:sso:::permissionSet/ssoins-722334ffaa3b5076/ps-72232d3190ed37b2,${local.sso_instance_arn}"
-}
-
-import {
-  to = module.porto.aws_ssoadmin_account_assignment.deploy
-  id = "${local.sso_user_id},USER,${local.account_id},AWS_ACCOUNT,arn:aws:sso:::permissionSet/ssoins-722334ffaa3b5076/ps-72232d3190ed37b2,${local.sso_instance_arn}"
 }
 
 data "aws_iam_policy_document" "porto_boundary" {
@@ -98,33 +87,9 @@ data "aws_iam_policy_document" "porto_read" {
   }
 
   statement {
-    sid       = "ReadRoles"
-    actions   = ["iam:GetRole", "iam:GetRolePolicy", "iam:ListRolePolicies", "iam:ListAttachedRolePolicies", "iam:ListRoleTags"]
-    resources = [local.porto.roles]
-  }
-
-  statement {
     sid       = "ReadResourceGroups"
     actions   = ["resource-groups:Get*", "resource-groups:List*"]
     resources = [local.porto.groups]
-  }
-
-  statement {
-    sid       = "ListStateBucket"
-    actions   = ["s3:ListBucket"]
-    resources = [aws_s3_bucket.state.arn]
-  }
-
-  statement {
-    sid       = "ReadState"
-    actions   = ["s3:GetObject"]
-    resources = [local.porto.state_key]
-  }
-
-  statement {
-    sid       = "LockState"
-    actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
-    resources = ["${local.porto.state_key}.tflock"]
   }
 }
 
@@ -164,38 +129,6 @@ data "aws_iam_policy_document" "porto_write" {
   }
 
   statement {
-    sid       = "WriteState"
-    actions   = ["s3:PutObject"]
-    resources = [local.porto.state_key]
-  }
-
-  statement {
-    sid       = "GrantRolesOnlyWithinBoundary"
-    actions   = ["iam:CreateRole", "iam:PutRolePolicy", "iam:AttachRolePolicy", "iam:PutRolePermissionsBoundary"]
-    resources = [local.porto.roles]
-
-    condition {
-      test     = "StringEquals"
-      variable = "iam:PermissionsBoundary"
-      values   = [local.porto.boundary_arn]
-    }
-  }
-
-  statement {
-    sid = "ManageRoles"
-    actions = [
-      "iam:DeleteRole",
-      "iam:DeleteRolePolicy",
-      "iam:DetachRolePolicy",
-      "iam:TagRole",
-      "iam:UntagRole",
-      "iam:UpdateRole",
-      "iam:UpdateAssumeRolePolicy",
-    ]
-    resources = [local.porto.roles]
-  }
-
-  statement {
     sid       = "PassRolesToLambda"
     actions   = ["iam:PassRole"]
     resources = [local.porto.roles]
@@ -205,13 +138,6 @@ data "aws_iam_policy_document" "porto_write" {
       variable = "iam:PassedToService"
       values   = ["lambda.amazonaws.com"]
     }
-  }
-
-  statement {
-    sid       = "KeepBoundary"
-    effect    = "Deny"
-    actions   = ["iam:DeleteRolePermissionsBoundary"]
-    resources = [local.porto.roles]
   }
 }
 
