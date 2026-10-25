@@ -108,11 +108,20 @@ jobs:
         run: |
           marker="<!-- stych:terraform-plan:$WORKDIR -->"
           summary=$(grep -E '^(Plan:|No changes)' "$RUNNER_TEMP/plan.log" | tail -1)
+          destroys=$(terraform -chdir="$WORKDIR" show -json tfplan | jq -r '
+            .resource_changes[]? | select(.change.actions | index("delete"))
+            | "> - `\(.address)` (\(if (.change.actions | index("create")) then "replace" else "destroy" end))"')
           body="$RUNNER_TEMP/comment.md"
           {
             echo "$marker"
             echo "### Terraform plan for \`$WORKDIR\`"
             echo
+            if [ -n "$destroys" ]; then
+              echo "> [!WARNING]"
+              echo "> This plan destroys or replaces $(grep -c . <<< "$destroys") resources:"
+              echo "$destroys"
+              echo
+            fi
             echo "**$summary**"
             echo
             echo "<details><summary>Full plan</summary>"
