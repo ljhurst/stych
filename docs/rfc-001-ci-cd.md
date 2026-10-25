@@ -31,6 +31,9 @@ read state.
 | Piece | What it is |
 |---|---|
 | `.github/workflows/terraform.yml` | Reusable (`workflow_call`). Inputs: plan and apply role ARNs, infra directory, build command, Node version file, Terraform version. On a PR: builds, plans, and keeps one plan comment up to date. On the default branch: builds, plans and applies in the `prod` environment. One `concurrency` group per PR for plans, per repo for applies. |
+| `.github/workflows/static-site.yml` | Reusable. Builds the site once and uploads it as an artifact. On a PR: previews `aws s3 sync --delete --dryrun` as the plan role and keeps one comment up to date. On the default branch: syncs that same artifact as the apply role in `prod`, then optionally invalidates CloudFront. |
+| `.github/workflows/pre-commit.yml` | Reusable. Runs a repo's own pre-commit hooks on every file, so CI and local checks can't drift. Toolchains, including Terraform, are opt-in inputs. |
+| `.github/actions/setup-toolchains` | Composite action every workflow uses to install only the Node, Go, uv or Terraform a project asks for. |
 | `infra/` foundation | The state bucket `lj-tf-state` (versioning, encryption, old-version expiry, TLS-only policy) and the GitHub OIDC provider. Both imported, both `prevent_destroy`. |
 | `infra/project_<name>.tf` | One file per managed project: its policy documents, written as ARN patterns per service, and its `project-access` module call. |
 | `infra/modules/project-access` | Per project: four policies, the `<name>-deploy` SSO permission set, and two CI roles under `/stych/`. |
@@ -84,8 +87,9 @@ read state.
 | 5 | `terraform.yml` v1 (done) | stych | — |
 | 6 | Lasso joins: tfvars as committed file or vars, caller workflow, first CI apply (done) | lasso | 1, 4, 5 |
 | 7 | Porto and Victoria join; `terraform.yml` v1.1 adds `go-version-file` and `setup-uv` for their Go and uv builds (done) | porto, victoria | 6 |
-| 8 | Fife, train-spotting, bracket-clash: roles move here; Fife drops `ignore_changes`; static-site workflow for S3 + CloudFront | each | 6 |
-| 9 | aboutme and dio join | aboutme, dio | 6 |
+| 8 | `static-site.yml` and `pre-commit.yml`; train-spotting and bracket-clash join, their deploy roles move here; the check workflow goes into every repo on stych | stych, train-spotting, bracket-clash, lasso, porto, victoria | 6 |
+| 9 | Fife joins: drops `ignore_changes`, backend through `terraform.yml`, frontend through `static-site.yml` with CloudFront | fife | 8 |
+| 10 | aboutme and dio join | aboutme, dio | 8 |
 
 Each row is an issue in its repo, tracked in #5. Every project's state is
 checked for secrets as part of joining.

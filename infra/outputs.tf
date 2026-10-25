@@ -33,6 +33,26 @@ output "victoria_apply_role_arn" {
   value       = module.victoria.apply_role_arn
 }
 
+output "train_spotting_plan_role_arn" {
+  description = "Role train-spotting's PR plan and site preview jobs assume"
+  value       = module.train_spotting.plan_role_arn
+}
+
+output "train_spotting_apply_role_arn" {
+  description = "Role train-spotting's apply and site deploy jobs assume"
+  value       = module.train_spotting.apply_role_arn
+}
+
+output "bracket_clash_plan_role_arn" {
+  description = "Role bracket-clash's PR plan and site preview jobs assume"
+  value       = module.bracket_clash.plan_role_arn
+}
+
+output "bracket_clash_apply_role_arn" {
+  description = "Role bracket-clash's apply and site deploy jobs assume"
+  value       = module.bracket_clash.apply_role_arn
+}
+
 output "github_oidc_provider_arn" {
   description = "GitHub Actions OIDC provider that project CI roles trust"
   value       = aws_iam_openid_connect_provider.github.arn

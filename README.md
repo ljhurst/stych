@@ -64,6 +64,51 @@ it. For an S3 bucket this includes `s3:ListBucket`, because Terraform checks
 the bucket exists with HeadBucket. Any plan that destroys or replaces
 resources lists them in a warning at the top of the PR comment.
 
+## Deploying a static site
+
+S3-hosted frontends add a `site` job next to `terraform`. A PR previews the
+sync, listing uploads and deletes. Merging deploys the same build artifact
+the PR previewed:
+
+```yaml
+  site:
+    needs: terraform
+    uses: ljhurst/stych/.github/workflows/static-site.yml@v1
+    with:
+      plan-role-arn: arn:aws:iam::755958650241:role/stych/<name>-ci-plan
+      apply-role-arn: arn:aws:iam::755958650241:role/stych/<name>-ci-apply
+      bucket: lj-<name>
+      site-dir: site              # synced to the bucket root with --delete
+      build-command: ...          # optional; must leave the site in site-dir
+      node-version-file: .nvmrc   # optional
+      distribution-id: ...        # optional CloudFront invalidation
+```
+
+## Checking a project
+
+Every repo's `check.yml` runs its own pre-commit hooks:
+
+```yaml
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  pre-commit:
+    uses: ljhurst/stych/.github/workflows/pre-commit.yml@v1
+    with:
+      terraform-version: "1.17.0"    # only when the hooks include terraform ones
+      setup-command: npm ci          # optional, e.g. for hooks that call npm scripts
+```
+
+Lock Terraform providers for both platforms (`terraform providers lock
+-platform=darwin_arm64 -platform=linux_amd64`). Otherwise the validate hook
+rewrites the lock file in CI and the check fails.
+
 ## Applying `infra/`
 
 `infra/` grants every other project its permissions, so it is applied from a

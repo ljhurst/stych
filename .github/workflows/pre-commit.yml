@@ -1,0 +1,56 @@
+---
+name: Pre-commit
+
+# yamllint disable-line rule:truthy
+on:
+  workflow_call:
+    inputs:
+      setup-command:
+        description: Command run from the repo root before the hooks, e.g. npm ci for hooks that call npm scripts
+        type: string
+        default: ""
+      node-version-file:
+        type: string
+        default: ""
+      go-version-file:
+        type: string
+        default: ""
+      setup-uv:
+        type: boolean
+        default: false
+      terraform-version:
+        description: Set when the hooks include terraform ones
+        type: string
+        default: ""
+
+permissions:
+  contents: read
+
+jobs:
+  pre-commit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: ljhurst/stych/.github/actions/setup-toolchains@feat/static-site-and-checks
+        with:
+          node-version-file: ${{ inputs.node-version-file }}
+          go-version-file: ${{ inputs.go-version-file }}
+          setup-uv: ${{ inputs.setup-uv }}
+          terraform-version: ${{ inputs.terraform-version }}
+
+      - name: Set up
+        if: inputs.setup-command != ''
+        env:
+          SETUP_COMMAND: ${{ inputs.setup-command }}
+        run: eval "$SETUP_COMMAND"
+
+      - uses: actions/cache@v6.1.0
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Run every pre-commit hook
+        run: pipx run pre-commit==4.7.0 run --all-files --show-diff-on-failure

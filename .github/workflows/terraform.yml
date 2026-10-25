@@ -67,18 +67,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - if: inputs.node-version-file != ''
-        uses: actions/setup-node@v7.1.0
+      - uses: ljhurst/stych/.github/actions/setup-toolchains@feat/static-site-and-checks
         with:
           node-version-file: ${{ inputs.node-version-file }}
-
-      - if: inputs.go-version-file != ''
-        uses: actions/setup-go@v7.0.0
-        with:
           go-version-file: ${{ inputs.go-version-file }}
-
-      - if: inputs.setup-uv
-        uses: astral-sh/setup-uv@v10.3.2
+          setup-uv: ${{ inputs.setup-uv }}
+          terraform-version: ${{ inputs.terraform-version }}
 
       - name: Build
         if: inputs.build-command != ''
@@ -89,11 +83,6 @@ jobs:
           role-to-assume: ${{ inputs.plan-role-arn }}
           role-session-name: stych-plan-${{ github.run_id }}
           aws-region: ${{ inputs.aws-region }}
-
-      - uses: hashicorp/setup-terraform@v4.0.1
-        with:
-          terraform_version: ${{ inputs.terraform-version }}
-          terraform_wrapper: false
 
       - name: Plan
         run: |
@@ -157,18 +146,12 @@ jobs:
         with:
           persist-credentials: false
 
-      - if: inputs.node-version-file != ''
-        uses: actions/setup-node@v7.1.0
+      - uses: ljhurst/stych/.github/actions/setup-toolchains@feat/static-site-and-checks
         with:
           node-version-file: ${{ inputs.node-version-file }}
-
-      - if: inputs.go-version-file != ''
-        uses: actions/setup-go@v7.0.0
-        with:
           go-version-file: ${{ inputs.go-version-file }}
-
-      - if: inputs.setup-uv
-        uses: astral-sh/setup-uv@v10.3.2
+          setup-uv: ${{ inputs.setup-uv }}
+          terraform-version: ${{ inputs.terraform-version }}
 
       - name: Build
         if: inputs.build-command != ''
@@ -179,11 +162,6 @@ jobs:
           role-to-assume: ${{ inputs.apply-role-arn }}
           role-session-name: stych-apply-${{ github.run_id }}
           aws-region: ${{ inputs.aws-region }}
-
-      - uses: hashicorp/setup-terraform@v4.0.1
-        with:
-          terraform_version: ${{ inputs.terraform-version }}
-          terraform_wrapper: false
 
       - name: Plan
         run: |
