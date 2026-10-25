@@ -2,12 +2,12 @@
 
 Every Terraform project deploys the same way: **plan on each PR, apply on merge
 to `main`**, through one shared workflow in this repo. Terraform owns both the
-infrastructure and the Lambda code. The AWS roles CI uses are defined here, not
-in the projects they deploy.
+infrastructure and the Lambda code. Everything that decides who may deploy a
+project lives here, not in the project: the state bucket, the GitHub OIDC
+provider, and each project's SSO permission set and CI roles.
 
 Before any project joins, its Terraform state must hold no secrets: plan jobs
-read state. Lasso's state currently holds its JWKS signing key and a client
-secret.
+read state.
 
 ## Why
 
@@ -18,6 +18,10 @@ secret.
 - **Roles live in the repos they deploy.** Fife, train-spotting and
   bracket-clash each define their own deploy role, so a merged PR can widen
   what its own CI may do.
+- **Shared pieces have no owner.** The state bucket was made by hand, and the
+  GitHub OIDC provider that four projects use belongs to aboutme's Terraform.
+  SSO permission sets were made with hand-run `aws sso-admin` commands, and
+  `lasso-deploy` can read other projects' state.
 - **This repo must be public.** A private repo's workflows can only be called
   by other private repos. Lasso, Fife, Victoria, train-spotting and
   bracket-clash are public. The repo holds code only; state stays in S3.
@@ -27,18 +31,21 @@ secret.
 | Piece | What it is |
 |---|---|
 | `.github/workflows/terraform.yml` | Reusable (`workflow_call`). Inputs: infra directory, build command, plan role ARN, apply role ARN. Builds, plans, comments the plan on the PR; on `main`, applies. One `concurrency` group per project. |
+| `infra/` foundation | The state bucket `lj-tf-state` (versioning, encryption, old-version expiry, TLS-only policy) and the GitHub OIDC provider. Both imported, both `prevent_destroy`. |
 | `infra/projects.tf` | One map, repo → resource name prefix. The only list of managed projects. |
-| `infra/modules/deploy-roles` | Per project, two roles trusted through the existing GitHub OIDC provider. |
+| `infra/modules/project-access` | Per project: one access policy, attached to its `<project>-deploy` SSO permission set (you, locally) and to its apply role (CI), plus a read-only plan role. |
 
 | Role | Trusted `sub` | Permissions |
 |---|---|---|
 | plan | `repo:ljhurst/<repo>:pull_request` | Read-only, plus that project's state |
-| apply | `repo:ljhurst/<repo>:environment:prod` | Resources under the project's prefix, plus its state |
+| apply | `repo:ljhurst/<repo>:environment:prod` | The project's access policy |
 
 - The plan job runs only when the PR's head branch is in the same repo, so fork
   PRs never reach the plan role.
-- `stych/infra` is applied from a laptop only. It grants every other
-  permission, so CI here lints and plans but never applies.
+- `stych/infra` is applied from a laptop with `luke-hurst-admin` only. It
+  grants every other permission, so CI here lints and plans but never applies.
+- The `luke-hurst-admin` permission set stays outside stych as emergency
+  access, so no stych apply can lock its own operator out.
 - Projects pin the workflow by tag (`@v1`). Releases follow SemVer.
 - Trust policies match the standard `sub` claim. GitHub documents custom claims
   such as `job_workflow_ref` as unsupported for AWS.
@@ -49,15 +56,18 @@ secret.
 
 | # | Work | Repo | Needs |
 |---|---|---|---|
-| 1 | Move Lasso's SSM secret values out of Terraform state | lasso | — |
-| 2 | Import the OIDC provider; `deploy-roles` module; Lasso's roles | stych | — |
-| 3 | `terraform.yml` v1 and the repo access setting | stych | — |
-| 4 | Lasso joins: tfvars as committed file or vars, caller workflow, first CI apply | lasso | 1, 2, 3 |
-| 5 | Porto and Victoria join | porto, victoria | 4 |
-| 6 | Fife, train-spotting, bracket-clash: roles move here; Fife drops `ignore_changes`; static-site workflow for S3 + CloudFront | each | 4 |
+| 1 | Move SSM secret values out of Terraform state (done) | lasso, porto, victoria | — |
+| 2 | Hand the GitHub OIDC provider over to stych | aboutme | — |
+| 3 | Foundation: import the state bucket and OIDC provider | stych | 2 |
+| 4 | `project-access` module, starting with Lasso | stych | 3 |
+| 5 | `terraform.yml` v1 and the repo access setting | stych | — |
+| 6 | Lasso joins: tfvars as committed file or vars, caller workflow, first CI apply | lasso | 1, 4, 5 |
+| 7 | Porto and Victoria join | porto, victoria | 6 |
+| 8 | Fife, train-spotting, bracket-clash: roles move here; Fife drops `ignore_changes`; static-site workflow for S3 + CloudFront | each | 6 |
+| 9 | aboutme and dio join | aboutme, dio | 6 |
 
-Each row is an issue in its repo, tracked in #5. Every project's state is checked for
-secrets as part of joining.
+Each row is an issue in its repo, tracked in #5. Every project's state is
+checked for secrets as part of joining.
 
 ## Not doing yet
 
