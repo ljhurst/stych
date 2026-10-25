@@ -1,0 +1,13 @@
+---
+rules:
+  unpinned-uses:
+    config:
+      policies:
+        # stych's own actions follow the floating v1 tag on purpose; release
+        # tags are protected and only the owner can move v1.
+        "ljhurst/stych/*": ref-pin
+        "*": hash-pin
+  self-repository:
+    # actionlint (v1.7.12) rejects the "$/" syntax this audit asks for, so
+    # local reusable workflows keep the documented "./" form.
+    disable: true
