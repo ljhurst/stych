@@ -11,25 +11,22 @@ permissions:
   contents: read
 
 jobs:
-  lint:
+  pre-commit:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
-      - name: yamllint
-        run: pipx run yamllint==1.38.0 --strict .
-
-      - name: actionlint
-        run: docker run --rm -v "$PWD:/repo" -w /repo rhysd/actionlint:1.7.12 -color
-
       - uses: hashicorp/setup-terraform@v4.0.1
         with:
           terraform_version: "1.17.0"
+          terraform_wrapper: false
 
-      - name: terraform fmt and validate
-        run: |
-          terraform -chdir=infra fmt -check -recursive
-          terraform -chdir=infra init -backend=false -input=false
-          terraform -chdir=infra validate
+      - uses: actions/cache@v6.1.0
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Run every pre-commit hook
+        run: pipx run pre-commit==4.7.0 run --all-files --show-diff-on-failure
