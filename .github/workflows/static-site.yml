@@ -56,7 +56,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: ljhurst/stych/.github/actions/setup-toolchains@feat/static-site-and-checks
+      - uses: ljhurst/stych/.github/actions/setup-toolchains@v1
         with:
           node-version-file: ${{ inputs.node-version-file }}
 
