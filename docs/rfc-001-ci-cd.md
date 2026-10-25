@@ -44,8 +44,8 @@ read state.
 
 | Role | Trusted `sub` | Policies |
 |---|---|---|
-| `<name>-ci-plan` | `repo:ljhurst/<repo>:pull_request` | read |
-| `<name>-ci-apply` | `repo:ljhurst/<repo>:environment:prod` | read + write |
+| `<name>-ci-plan` | `<prefix>:pull_request` | read |
+| `<name>-ci-apply` | `<prefix>:environment:prod` | read + write |
 
 - The deploy policies (read + write) are the same for you and for CI, so the
   two can't drift. Only people get operate, so CI never reads data or secrets.
@@ -62,8 +62,11 @@ read state.
 - The `luke-hurst-admin` permission set stays outside stych as emergency
   access, so no stych apply can lock its own operator out.
 - Projects pin the workflow by tag (`@v1`). Releases follow SemVer.
-- Trust policies match the standard `sub` claim. GitHub documents custom claims
-  such as `job_workflow_ref` as unsupported for AWS.
+- Trust policies match the `sub` claim. `<prefix>` is the repo's subject prefix
+  as GitHub reports it (`GET /repos/{owner}/{repo}/actions/oidc/customization/sub`).
+  Newer repos use immutable subjects with owner and repo IDs
+  (`repo:ljhurst@9142868/lasso@1341558720`), older ones `repo:ljhurst/<repo>`.
+  GitHub documents custom claims such as `job_workflow_ref` as unsupported for AWS.
 - Lambda zips are built reproducibly (fixed mtimes, `zip -X`), so
   `source_code_hash` changes only when the code does.
 

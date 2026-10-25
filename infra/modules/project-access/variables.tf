@@ -3,8 +3,8 @@ variable "name" {
   type        = string
 }
 
-variable "repo" {
-  description = "GitHub repository whose workflows may assume the CI roles, as owner/name"
+variable "github_subject_prefix" {
+  description = "The repo's OIDC subject prefix, as reported by GET /repos/{owner}/{repo}/actions/oidc/customization/sub"
   type        = string
 }
 
