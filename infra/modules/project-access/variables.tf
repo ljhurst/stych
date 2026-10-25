@@ -33,13 +33,18 @@ variable "boundary_policy_json" {
   type        = string
 }
 
+variable "state_bucket_arn" {
+  description = "Bucket holding every project's Terraform state; the project gets only its own key"
+  type        = string
+}
+
 variable "read_policy_json" {
-  description = "What a Terraform plan needs: read the project's resources and its state"
+  description = "Project-specific reads a Terraform plan needs; state and role reads are added by the module"
   type        = string
 }
 
 variable "write_policy_json" {
-  description = "What a Terraform apply needs beyond read"
+  description = "Project-specific writes a Terraform apply needs; state, boundary-gated IAM and boundary protection are added by the module"
   type        = string
 }
 

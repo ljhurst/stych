@@ -120,7 +120,60 @@ export AWS_PROFILE=luke-hurst-admin
 terraform -chdir=infra init
 terraform -chdir=infra plan -out=stych.tfplan
 terraform -chdir=infra apply stych.tfplan
+for p in $(sed -n 's/^ *name *= *"\([a-z0-9-]*\)"$/\1/p' infra/project_*.tf); do
+  scripts/verify-access.sh "$p"
+done
 ```
+
+`scripts/verify-access.sh` runs each project's three principals through the
+standard allow/deny matrix:
+
+- own state allowed; other projects' state and secrets denied
+- roles only within the boundary
+- no editing its own CI roles
+- the plan role can't write
+
+Add project-specific checks with a second argument (see the script header).
 
 The state bucket and the OIDC provider have `prevent_destroy`: every
 project's state and CI depend on them.
+
+## Adding a project
+
+`infra/project_<name>.tf` holds only what is specific to the project: its
+ARNs and its boundary, read, write and operate statements. The module adds
+everything every project gets:
+
+- state read, write and lock on `<name>/terraform.tfstate`
+- reading `<name>-*` roles
+- creating or changing them only with the boundary attached
+- never removing the boundary
+
+## Releasing
+
+Callers pin `@v1`, and the workflows reference
+`setup-toolchains@v1`, so a release is:
+
+1. merge the PR
+2. tag the merge commit `vX.Y.Z` (SemVer: a new input or workflow is minor)
+3. move `v1` to it: `git tag -f v1 vX.Y.Z^{} && git push -f origin v1`
+4. re-run Check on `main`
+
+A PR that changes `setup-toolchains` fails its own Check until `v1` moves,
+because its workflows still resolve the action at the old `v1`.
+
+## Security model
+
+Fork pull requests can't touch AWS:
+
+- They run with a read-only `GITHUB_TOKEN`, and requesting an OIDC token needs
+  `id-token: write`, so they can't assume any role.
+- The plan and preview jobs skip fork PRs as well.
+- No workflow uses `pull_request_target`.
+
+Applying needs a push to `main`, where only the owner can write, and each
+project's `prod` environment admits only `main`.
+
+Plan comments and site previews on public repos are public, so never put a
+secret in a Lambda environment variable, tfvars, or Terraform state. Secrets
+live in SSM and are written outside Terraform.

@@ -1,13 +1,11 @@
 locals {
   victoria = {
-    functions    = "arn:aws:lambda:us-east-1:${local.account_id}:function:lj-victoria-*"
-    log_group    = "arn:aws:logs:us-east-1:${local.account_id}:log-group:/aws/lambda/lj-victoria-*"
-    roles        = "arn:aws:iam::${local.account_id}:role/victoria-*"
-    groups       = "arn:aws:resource-groups:us-east-1:${local.account_id}:group/victoria-*"
-    ssm_params   = "arn:aws:ssm:us-east-1:${local.account_id}:parameter/victoria/*"
-    wiki_bucket  = "arn:aws:s3:::lj-victoria-wiki"
-    state_key    = "${aws_s3_bucket.state.arn}/victoria/terraform.tfstate"
-    boundary_arn = "arn:aws:iam::${local.account_id}:policy/stych/victoria-boundary"
+    functions   = "arn:aws:lambda:${local.region}:${local.account_id}:function:lj-victoria-*"
+    log_group   = "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/lambda/lj-victoria-*"
+    roles       = "arn:aws:iam::${local.account_id}:role/victoria-*"
+    groups      = "arn:aws:resource-groups:${local.region}:${local.account_id}:group/victoria-*"
+    ssm_params  = "arn:aws:ssm:${local.region}:${local.account_id}:parameter/victoria/*"
+    wiki_bucket = "arn:aws:s3:::lj-victoria-wiki"
 
     # Only the seed pages Terraform manages; CI never reads the rest of the wiki.
     managed_pages = [
@@ -27,21 +25,12 @@ module "victoria" {
   oidc_provider_arn     = aws_iam_openid_connect_provider.github.arn
   sso_instance_arn      = local.sso_instance_arn
   sso_user_id           = local.sso_user_id
+  state_bucket_arn      = aws_s3_bucket.state.arn
 
   boundary_policy_json = data.aws_iam_policy_document.victoria_boundary.json
   read_policy_json     = data.aws_iam_policy_document.victoria_read.json
   write_policy_json    = data.aws_iam_policy_document.victoria_write.json
   operate_policy_json  = data.aws_iam_policy_document.victoria_operate.json
-}
-
-import {
-  to = module.victoria.aws_ssoadmin_permission_set.deploy
-  id = "arn:aws:sso:::permissionSet/ssoins-722334ffaa3b5076/ps-72232a2d2336e420,${local.sso_instance_arn}"
-}
-
-import {
-  to = module.victoria.aws_ssoadmin_account_assignment.deploy
-  id = "${local.sso_user_id},USER,${local.account_id},AWS_ACCOUNT,arn:aws:sso:::permissionSet/ssoins-722334ffaa3b5076/ps-72232a2d2336e420,${local.sso_instance_arn}"
 }
 
 data "aws_iam_policy_document" "victoria_boundary" {
@@ -102,33 +91,9 @@ data "aws_iam_policy_document" "victoria_read" {
   }
 
   statement {
-    sid       = "ReadRoles"
-    actions   = ["iam:GetRole", "iam:GetRolePolicy", "iam:ListRolePolicies", "iam:ListAttachedRolePolicies", "iam:ListRoleTags"]
-    resources = [local.victoria.roles]
-  }
-
-  statement {
     sid       = "ReadResourceGroups"
     actions   = ["resource-groups:Get*", "resource-groups:List*"]
     resources = [local.victoria.groups]
-  }
-
-  statement {
-    sid       = "ListStateBucket"
-    actions   = ["s3:ListBucket"]
-    resources = [aws_s3_bucket.state.arn]
-  }
-
-  statement {
-    sid       = "ReadState"
-    actions   = ["s3:GetObject"]
-    resources = [local.victoria.state_key]
-  }
-
-  statement {
-    sid       = "LockState"
-    actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
-    resources = ["${local.victoria.state_key}.tflock"]
   }
 }
 
@@ -164,38 +129,6 @@ data "aws_iam_policy_document" "victoria_write" {
   }
 
   statement {
-    sid       = "WriteState"
-    actions   = ["s3:PutObject"]
-    resources = [local.victoria.state_key]
-  }
-
-  statement {
-    sid       = "GrantRolesOnlyWithinBoundary"
-    actions   = ["iam:CreateRole", "iam:PutRolePolicy", "iam:AttachRolePolicy", "iam:PutRolePermissionsBoundary"]
-    resources = [local.victoria.roles]
-
-    condition {
-      test     = "StringEquals"
-      variable = "iam:PermissionsBoundary"
-      values   = [local.victoria.boundary_arn]
-    }
-  }
-
-  statement {
-    sid = "ManageRoles"
-    actions = [
-      "iam:DeleteRole",
-      "iam:DeleteRolePolicy",
-      "iam:DetachRolePolicy",
-      "iam:TagRole",
-      "iam:UntagRole",
-      "iam:UpdateRole",
-      "iam:UpdateAssumeRolePolicy",
-    ]
-    resources = [local.victoria.roles]
-  }
-
-  statement {
     sid       = "PassRolesToLambda"
     actions   = ["iam:PassRole"]
     resources = [local.victoria.roles]
@@ -205,13 +138,6 @@ data "aws_iam_policy_document" "victoria_write" {
       variable = "iam:PassedToService"
       values   = ["lambda.amazonaws.com"]
     }
-  }
-
-  statement {
-    sid       = "KeepBoundary"
-    effect    = "Deny"
-    actions   = ["iam:DeleteRolePermissionsBoundary"]
-    resources = [local.victoria.roles]
   }
 }
 
