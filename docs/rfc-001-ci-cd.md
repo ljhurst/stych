@@ -87,7 +87,7 @@ read state.
 | 5 | `terraform.yml` v1 (done) | stych | — |
 | 6 | Lasso joins: tfvars as committed file or vars, caller workflow, first CI apply (done) | lasso | 1, 4, 5 |
 | 7 | Porto and Victoria join; `terraform.yml` v1.1 adds `go-version-file` and `setup-uv` for their Go and uv builds (done) | porto, victoria | 6 |
-| 8 | `static-site.yml` and `pre-commit.yml`; train-spotting and bracket-clash join, their deploy roles move here; the check workflow goes into every repo on stych | stych, train-spotting, bracket-clash, lasso, porto, victoria | 6 |
+| 8 | `static-site.yml` and `pre-commit.yml`; train-spotting and bracket-clash join, their deploy roles move here; the check workflow goes into every repo on stych (done) | stych, train-spotting, bracket-clash, lasso, porto, victoria | 6 |
 | 9 | Fife joins: drops `ignore_changes`, backend through `terraform.yml`, frontend through `static-site.yml` with CloudFront | fife | 8 |
 | 10 | aboutme and dio join | aboutme, dio | 8 |
 
