@@ -20,7 +20,7 @@ production.
 
 - `.github/workflows/` — reusable workflows that projects call to plan and apply.
 - `infra/` — the state bucket, the GitHub OIDC provider, and each project's access.
-- `docs/` — design decisions, starting with [RFC 001: CI/CD](docs/rfc-001-ci-cd.md).
+- `docs/` — design decisions ([RFC 001: CI/CD](docs/rfc-001-ci-cd.md)) and [security guidance](docs/security.md).
 
 ## Deploying a project
 
@@ -195,6 +195,8 @@ A PR that changes `setup-toolchains` fails its own Check until `v1` moves,
 because its workflows still resolve the action at the old `v1`.
 
 ## Security model
+
+The full guidance is in [docs/security.md](docs/security.md). In short:
 
 Fork pull requests can't touch AWS:
 
