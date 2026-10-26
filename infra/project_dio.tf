@@ -1,9 +1,7 @@
 locals {
   dio = {
-    function       = "arn:aws:lambda:${local.region}:${local.account_id}:function:lj-dio-extract"
-    vercel_oidc    = "arn:aws:iam::${local.account_id}:oidc-provider/oidc.vercel.com/ljhursts-projects"
-    legacy_roles   = [for r in ["lj-dio-lambda-exec", "lj-dio-github-actions-deploy", "lj-dio-sommething-invoke"] : "arn:aws:iam::${local.account_id}:role/${r}"]
-    permission_set = "arn:aws:sso:::permissionSet/ssoins-722334ffaa3b5076/ps-722309dd972cb8bb"
+    function    = "arn:aws:lambda:${local.region}:${local.account_id}:function:lj-dio-extract"
+    vercel_oidc = "arn:aws:iam::${local.account_id}:oidc-provider/oidc.vercel.com/ljhursts-projects"
   }
 }
 
@@ -34,16 +32,6 @@ module "dio" {
   operate_policy_json  = module.dio_lambda_access.operate_policy_json
 }
 
-import {
-  to = module.dio.aws_ssoadmin_permission_set.deploy
-  id = "${local.dio.permission_set},${local.sso_instance_arn}"
-}
-
-import {
-  to = module.dio.aws_ssoadmin_account_assignment.deploy
-  id = "${local.sso_user_id},USER,${local.account_id},AWS_ACCOUNT,${local.dio.permission_set},${local.sso_instance_arn}"
-}
-
 data "aws_iam_policy_document" "dio_boundary" {
   source_policy_documents = [module.dio_lambda_access.boundary_policy_json]
 
@@ -63,12 +51,6 @@ data "aws_iam_policy_document" "dio_read" {
     resources = [local.dio.vercel_oidc]
   }
 
-  # The roles dio defined before joining stych, until the first CI apply removes them.
-  statement {
-    sid       = "ReadLegacyRoles"
-    actions   = ["iam:GetRole", "iam:GetRolePolicy", "iam:ListRolePolicies", "iam:ListAttachedRolePolicies", "iam:ListRoleTags"]
-    resources = local.dio.legacy_roles
-  }
 }
 
 data "aws_iam_policy_document" "dio_write" {
@@ -86,14 +68,4 @@ data "aws_iam_policy_document" "dio_write" {
     resources = [local.dio.vercel_oidc]
   }
 
-  # Removed once the first CI apply has deleted the roles dio defined before joining stych.
-  statement {
-    sid = "RemoveLegacyRoles"
-    actions = [
-      "iam:DeleteRole",
-      "iam:DeleteRolePolicy",
-      "iam:ListInstanceProfilesForRole",
-    ]
-    resources = local.dio.legacy_roles
-  }
 }
