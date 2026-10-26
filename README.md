@@ -164,8 +164,8 @@ The monthly batch holds minor and patch updates only. For npm, Go and uv, major
 versions are ignored and upgraded by hand.
 
 stych's release tags (`v*.*.*`) are protected by their own ruleset. Fork
-pull request approval has no Terraform resource, so a script sets it. Apply
-both from a laptop:
+pull request approval and deleting merged branches have no Terraform
+resource, so a script sets each. Apply all of it from a laptop:
 
 ```bash
 export AWS_PROFILE=luke-hurst-admin GITHUB_TOKEN=$(gh auth token)
@@ -173,6 +173,7 @@ terraform -chdir=github init
 terraform -chdir=github plan -out=github.tfplan
 terraform -chdir=github apply github.tfplan
 scripts/apply-fork-approval.sh
+scripts/apply-branch-cleanup.sh
 ```
 
 ## Adding a project
