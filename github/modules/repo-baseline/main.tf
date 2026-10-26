@@ -17,8 +17,12 @@ resource "github_repository_ruleset" "default_branch" {
     deletion         = true
     non_fast_forward = true
 
-    pull_request {
-      allowed_merge_methods = ["merge", "squash", "rebase"]
+    dynamic "pull_request" {
+      for_each = var.require_pull_request ? [1] : []
+
+      content {
+        allowed_merge_methods = ["merge", "squash", "rebase"]
+      }
     }
 
     dynamic "required_status_checks" {
