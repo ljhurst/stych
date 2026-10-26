@@ -158,6 +158,8 @@ Each repo also carries its own `.github/dependabot.yml`: version updates run
 monthly, one grouped PR per ecosystem, with a 7-day cooldown. Security
 updates ignore the schedule and cooldown and arrive as one grouped PR. Copy
 `.github/dependabot.yml` from this repo and keep the ecosystems the repo uses.
+The monthly batch holds minor and patch updates only. For npm, Go and uv, major
+versions are ignored and upgraded by hand.
 
 stych's release tags (`v*.*.*`) are protected by their own ruleset. Fork
 pull request approval has no Terraform resource, so a script sets it. Apply
