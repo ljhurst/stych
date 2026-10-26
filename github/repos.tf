@@ -11,7 +11,7 @@ locals {
     fife           = { private = false, required_checks = [], prod_environment = true, require_pull_request = true }
     aboutme        = { private = false, required_checks = [], prod_environment = false, require_pull_request = true }
     sommething     = { private = false, required_checks = [], prod_environment = false, require_pull_request = true }
-    dio            = { private = false, required_checks = [], prod_environment = false, require_pull_request = true }
+    dio            = { private = false, required_checks = [local.check], prod_environment = true, require_pull_request = true }
     interview      = { private = false, required_checks = [], prod_environment = false, require_pull_request = false }
     dotfiles       = { private = false, required_checks = [], prod_environment = false, require_pull_request = false }
   }
