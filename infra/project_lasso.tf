@@ -1,8 +1,6 @@
 locals {
   lasso = {
-    lwa_layer      = "arn:aws:lambda:${local.region}:753240598075:layer:LambdaAdapterLayerArm64:*"
-    tables         = "arn:aws:dynamodb:${local.region}:${local.account_id}:table/lj-lasso*"
-    table_data_ops = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:Query", "dynamodb:Scan", "dynamodb:BatchGetItem", "dynamodb:BatchWriteItem", "dynamodb:ConditionCheckItem"]
+    lwa_layer = "arn:aws:lambda:${local.region}:753240598075:layer:LambdaAdapterLayerArm64:*"
   }
 }
 
@@ -13,6 +11,15 @@ module "lasso_lambda_access" {
   account_id       = local.account_id
   region           = local.region
   function_pattern = "lj-lasso*"
+}
+
+module "lasso_dynamodb_access" {
+  source = "./modules/dynamodb-access"
+
+  account_id   = local.account_id
+  region       = local.region
+  tables       = ["lj-lasso*"]
+  data_actions = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:Query", "dynamodb:Scan", "dynamodb:BatchGetItem", "dynamodb:BatchWriteItem", "dynamodb:ConditionCheckItem"]
 }
 
 module "lasso" {
@@ -33,61 +40,23 @@ module "lasso" {
 }
 
 data "aws_iam_policy_document" "lasso_boundary" {
-  source_policy_documents = [module.lasso_lambda_access.boundary_policy_json]
-
-  statement {
-    sid       = "TableData"
-    actions   = local.lasso.table_data_ops
-    resources = [local.lasso.tables, "${local.lasso.tables}/index/*"]
-  }
-
+  source_policy_documents = [module.lasso_lambda_access.boundary_policy_json, module.lasso_dynamodb_access.boundary_policy_json]
 }
 
 data "aws_iam_policy_document" "lasso_read" {
-  source_policy_documents = [module.lasso_lambda_access.read_policy_json]
+  source_policy_documents = [module.lasso_lambda_access.read_policy_json, module.lasso_dynamodb_access.read_policy_json]
 
   statement {
     sid       = "ReadAdapterLayer"
     actions   = ["lambda:GetLayerVersion"]
     resources = [local.lasso.lwa_layer]
   }
-
-  statement {
-    sid       = "ReadTables"
-    actions   = ["dynamodb:Describe*", "dynamodb:ListTagsOfResource", "dynamodb:GetResourcePolicy"]
-    resources = [local.lasso.tables]
-  }
-
 }
 
 data "aws_iam_policy_document" "lasso_write" {
-  source_policy_documents = [module.lasso_lambda_access.write_policy_json]
-
-  statement {
-    sid = "ManageTables"
-    actions = [
-      "dynamodb:CreateTable",
-      "dynamodb:UpdateTable",
-      "dynamodb:DeleteTable",
-      "dynamodb:TagResource",
-      "dynamodb:UntagResource",
-      "dynamodb:UpdateTimeToLive",
-      "dynamodb:UpdateContinuousBackups",
-      "dynamodb:PutResourcePolicy",
-      "dynamodb:DeleteResourcePolicy",
-    ]
-    resources = [local.lasso.tables]
-  }
-
+  source_policy_documents = [module.lasso_lambda_access.write_policy_json, module.lasso_dynamodb_access.write_policy_json]
 }
 
 data "aws_iam_policy_document" "lasso_operate" {
-  source_policy_documents = [module.lasso_lambda_access.operate_policy_json]
-
-  statement {
-    sid       = "TableData"
-    actions   = concat(local.lasso.table_data_ops, ["dynamodb:DescribeTable"])
-    resources = [local.lasso.tables, "${local.lasso.tables}/index/*"]
-  }
-
+  source_policy_documents = [module.lasso_lambda_access.operate_policy_json, module.lasso_dynamodb_access.operate_policy_json]
 }

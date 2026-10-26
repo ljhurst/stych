@@ -1,17 +1,12 @@
 locals {
   fife = {
     permission_set = "arn:aws:sso:::permissionSet/ssoins-722334ffaa3b5076/ps-722345f159460a9f"
-    tables = [
-      "arn:aws:dynamodb:${local.region}:${local.account_id}:table/fife-*",
-      "arn:aws:dynamodb:${local.region}:${local.account_id}:table/fife-*/index/*",
-    ]
-    policies = "arn:aws:iam::${local.account_id}:policy/fife-*"
+    policies       = "arn:aws:iam::${local.account_id}:policy/fife-*"
     api = [
       "arn:aws:apigateway:${local.region}::/apis",
       "arn:aws:apigateway:${local.region}::/apis/*",
       "arn:aws:apigateway:${local.region}::/tags/*",
     ]
-    table_data_ops = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:Query", "dynamodb:Scan", "dynamodb:ConditionCheckItem"]
   }
 }
 
@@ -32,6 +27,14 @@ module "fife_site_access" {
   bucket_name     = "lj-fife"
   account_id      = local.account_id
   certificate_arn = aws_acm_certificate.wildcard.arn
+}
+
+module "fife_dynamodb_access" {
+  source = "./modules/dynamodb-access"
+
+  account_id = local.account_id
+  region     = local.region
+  tables     = ["fife-*"]
 }
 
 module "fife" {
@@ -62,23 +65,11 @@ import {
 }
 
 data "aws_iam_policy_document" "fife_boundary" {
-  source_policy_documents = [module.fife_lambda_access.boundary_policy_json]
-
-  statement {
-    sid       = "ReadWriteTables"
-    actions   = local.fife.table_data_ops
-    resources = local.fife.tables
-  }
+  source_policy_documents = [module.fife_lambda_access.boundary_policy_json, module.fife_dynamodb_access.boundary_policy_json]
 }
 
 data "aws_iam_policy_document" "fife_read" {
-  source_policy_documents = [module.fife_site_access.read_policy_json, module.fife_lambda_access.read_policy_json]
-
-  statement {
-    sid       = "ReadTables"
-    actions   = ["dynamodb:Describe*", "dynamodb:ListTagsOfResource", "dynamodb:GetResourcePolicy"]
-    resources = local.fife.tables
-  }
+  source_policy_documents = [module.fife_site_access.read_policy_json, module.fife_lambda_access.read_policy_json, module.fife_dynamodb_access.read_policy_json]
 
   statement {
     sid       = "ReadApi"
@@ -94,23 +85,7 @@ data "aws_iam_policy_document" "fife_read" {
 }
 
 data "aws_iam_policy_document" "fife_write" {
-  source_policy_documents = [module.fife_site_access.write_policy_json, module.fife_lambda_access.write_policy_json]
-
-  statement {
-    sid = "ManageTables"
-    actions = [
-      "dynamodb:CreateTable",
-      "dynamodb:UpdateTable",
-      "dynamodb:DeleteTable",
-      "dynamodb:TagResource",
-      "dynamodb:UntagResource",
-      "dynamodb:UpdateTimeToLive",
-      "dynamodb:UpdateContinuousBackups",
-      "dynamodb:PutResourcePolicy",
-      "dynamodb:DeleteResourcePolicy",
-    ]
-    resources = local.fife.tables
-  }
+  source_policy_documents = [module.fife_site_access.write_policy_json, module.fife_lambda_access.write_policy_json, module.fife_dynamodb_access.write_policy_json]
 
   statement {
     sid       = "ManageApi"
@@ -134,11 +109,5 @@ data "aws_iam_policy_document" "fife_write" {
 }
 
 data "aws_iam_policy_document" "fife_operate" {
-  source_policy_documents = [module.fife_site_access.operate_policy_json, module.fife_lambda_access.operate_policy_json]
-
-  statement {
-    sid       = "TableData"
-    actions   = concat(local.fife.table_data_ops, ["dynamodb:DescribeTable"])
-    resources = local.fife.tables
-  }
+  source_policy_documents = [module.fife_site_access.operate_policy_json, module.fife_lambda_access.operate_policy_json, module.fife_dynamodb_access.operate_policy_json]
 }
