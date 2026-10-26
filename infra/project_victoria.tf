@@ -16,6 +16,14 @@ locals {
   }
 }
 
+module "victoria_cloudfront_access" {
+  source = "./modules/cloudfront-access"
+
+  project         = "victoria"
+  account_id      = local.account_id
+  certificate_arn = aws_acm_certificate.wildcard.arn
+}
+
 module "victoria" {
   source = "./modules/project-access"
 
@@ -60,6 +68,8 @@ data "aws_iam_policy_document" "victoria_boundary" {
 }
 
 data "aws_iam_policy_document" "victoria_read" {
+  source_policy_documents = [module.victoria_cloudfront_access.read_policy_json]
+
   statement {
     sid       = "ReadFunctions"
     actions   = ["lambda:Get*", "lambda:List*"]
@@ -98,6 +108,8 @@ data "aws_iam_policy_document" "victoria_read" {
 }
 
 data "aws_iam_policy_document" "victoria_write" {
+  source_policy_documents = [module.victoria_cloudfront_access.write_policy_json]
+
   statement {
     sid       = "ManageFunctions"
     actions   = ["lambda:*"]

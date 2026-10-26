@@ -12,6 +12,14 @@ locals {
   }
 }
 
+module "porto_cloudfront_access" {
+  source = "./modules/cloudfront-access"
+
+  project         = "porto"
+  account_id      = local.account_id
+  certificate_arn = aws_acm_certificate.wildcard.arn
+}
+
 module "porto" {
   source = "./modules/project-access"
 
@@ -56,6 +64,8 @@ data "aws_iam_policy_document" "porto_boundary" {
 }
 
 data "aws_iam_policy_document" "porto_read" {
+  source_policy_documents = [module.porto_cloudfront_access.read_policy_json]
+
   statement {
     sid       = "ReadFunctions"
     actions   = ["lambda:Get*", "lambda:List*"]
@@ -94,6 +104,8 @@ data "aws_iam_policy_document" "porto_read" {
 }
 
 data "aws_iam_policy_document" "porto_write" {
+  source_policy_documents = [module.porto_cloudfront_access.write_policy_json]
+
   statement {
     sid       = "ManageFunctions"
     actions   = ["lambda:*"]

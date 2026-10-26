@@ -36,6 +36,9 @@ guidance here first.
     boundary, and the boundary can't be removed.
 - **Site buckets are private.** A static site is served through CloudFront
   with origin access control, never from a public S3 endpoint.
+- **Function URLs stay public behind CloudFront.** The custom domain is a
+  convenience, not a lock: origin access control would make every client hash
+  its POST bodies, so each service authenticates requests itself.
 - **A project changes only its own distributions.** Updating, deleting and
   invalidating CloudFront distributions requires the project's `Project` tag.
   Origin access controls and response headers policies can't be tagged, so a

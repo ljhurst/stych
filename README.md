@@ -118,6 +118,35 @@ Pin a `vX.Y.Z` release, not `v1`: `v1` moves. After the apply, add a DNS-only
 the `distribution_id` output to the `site` job so each deploy invalidates the
 cache.
 
+## Fronting a Lambda Function URL
+
+A Function URL has no custom domain of its own. The `function-url-site` module
+puts CloudFront in front of one at `<name>.bylukehurst.com`: HTTP redirects to
+HTTPS, nothing is cached, every method and header (including `Authorization`)
+reaches the function, and the managed security headers policy is attached. It
+finds the wildcard certificate by domain, so the default AWS provider must be
+`us-east-1`.
+
+```hcl
+module "front" {
+  source         = "git::https://github.com/ljhurst/stych.git//infra/modules/function-url-site?ref=vX.Y.Z"
+  domain_name    = "<name>.bylukehurst.com"
+  function_url   = aws_lambda_function_url.<name>.function_url
+  origin_timeout = 120   # at least the function's own timeout
+}
+```
+
+The project's CI roles need the CloudFront and certificate permissions: add a
+`cloudfront-access` module in `infra/project_<name>.tf` and list its
+`read_policy_json` and `write_policy_json` as `source_policy_documents` of the
+project's read and write policies (see `project_victoria.tf`).
+
+`origin_timeout` can't exceed the account's `Response timeout per origin`
+quota (120 seconds). The Function URL stays reachable directly: origin access
+control would make every client hash its POST bodies, which MCP clients do
+not, so the service must authenticate requests itself. After the apply, add a
+DNS-only `CNAME <name>` in Cloudflare pointing at the `cname_target` output.
+
 ## Checking a project
 
 Every repo's `check.yml` runs its own pre-commit hooks:
