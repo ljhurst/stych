@@ -149,7 +149,9 @@ project's state and CI depend on them.
 provider. Every repo in `github/repos.tf` gets:
 
 - a `main` ruleset: no deletion, no force-push, changes through a PR, and the
-  required checks (not on private repos, which the free plan excludes)
+  required checks (not on private repos, which the free plan excludes). Repos
+  with no CI/CD set `require_pull_request = false`, which drops the PR rule
+  and keeps force-push and deletion blocked
 - a `prod` environment that only `main` may use, for repos that deploy
 - read-only workflow tokens that can't approve pull requests
 - Dependabot vulnerability alerts and security updates
