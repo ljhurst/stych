@@ -1,7 +1,10 @@
-locals {
-  train_spotting = {
-    bucket = "arn:aws:s3:::lj-train-spotting"
-  }
+module "train_spotting_access" {
+  source = "./modules/static-site-access"
+
+  project         = "train-spotting"
+  bucket_name     = "lj-train-spotting"
+  account_id      = local.account_id
+  certificate_arn = aws_acm_certificate.wildcard.arn
 }
 
 module "train_spotting" {
@@ -15,53 +18,8 @@ module "train_spotting" {
   sso_user_id           = local.sso_user_id
   state_bucket_arn      = aws_s3_bucket.state.arn
 
-  boundary_policy_json = data.aws_iam_policy_document.train_spotting_boundary.json
-  read_policy_json     = data.aws_iam_policy_document.train_spotting_read.json
-  write_policy_json    = data.aws_iam_policy_document.train_spotting_write.json
-  operate_policy_json  = data.aws_iam_policy_document.train_spotting_operate.json
-}
-
-# The site has no workload roles; the module still requires a boundary.
-data "aws_iam_policy_document" "train_spotting_boundary" {
-  statement {
-    sid       = "ReadSite"
-    actions   = ["s3:GetObject"]
-    resources = ["${local.train_spotting.bucket}/*"]
-  }
-}
-
-data "aws_iam_policy_document" "train_spotting_read" {
-  statement {
-    sid       = "ReadSiteBucket"
-    actions   = ["s3:ListBucket", "s3:GetBucket*", "s3:GetAccelerateConfiguration", "s3:GetLifecycleConfiguration", "s3:GetReplicationConfiguration", "s3:GetEncryptionConfiguration"]
-    resources = [local.train_spotting.bucket]
-  }
-}
-
-data "aws_iam_policy_document" "train_spotting_write" {
-  statement {
-    sid       = "ManageSiteBucket"
-    actions   = ["s3:*"]
-    resources = [local.train_spotting.bucket]
-  }
-
-  statement {
-    sid       = "DeploySite"
-    actions   = ["s3:PutObject", "s3:DeleteObject"]
-    resources = ["${local.train_spotting.bucket}/*"]
-  }
-}
-
-data "aws_iam_policy_document" "train_spotting_operate" {
-  statement {
-    sid       = "ListSite"
-    actions   = ["s3:ListBucket"]
-    resources = [local.train_spotting.bucket]
-  }
-
-  statement {
-    sid       = "ManageSiteObjects"
-    actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
-    resources = ["${local.train_spotting.bucket}/*"]
-  }
+  boundary_policy_json = module.train_spotting_access.boundary_policy_json
+  read_policy_json     = module.train_spotting_access.read_policy_json
+  write_policy_json    = module.train_spotting_access.write_policy_json
+  operate_policy_json  = module.train_spotting_access.operate_policy_json
 }

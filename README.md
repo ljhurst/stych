@@ -229,6 +229,11 @@ everything every project gets:
 - creating or changing them only with the boundary attached
 - never removing the boundary
 
+A static site serves from `<name>.bylukehurst.com`, so its policies come from
+the `static-site-access` module (see `project_bracket_clash.tf`) instead of
+being written out: it grants the S3 and CloudFront access a site needs, with
+CloudFront changes limited to resources tagged `Project=<name>`.
+
 ## Releasing
 
 Callers pin `@v1`, and the workflows reference
