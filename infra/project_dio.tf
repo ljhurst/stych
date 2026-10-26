@@ -1,14 +1,20 @@
 locals {
   dio = {
     function       = "arn:aws:lambda:${local.region}:${local.account_id}:function:lj-dio-extract"
-    functions      = "arn:aws:lambda:${local.region}:${local.account_id}:function:lj-dio-*"
-    log_group      = "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/lambda/lj-dio-*"
-    roles          = "arn:aws:iam::${local.account_id}:role/dio-*"
-    ssm_params     = "arn:aws:ssm:${local.region}:${local.account_id}:parameter/dio/*"
     vercel_oidc    = "arn:aws:iam::${local.account_id}:oidc-provider/oidc.vercel.com/ljhursts-projects"
     legacy_roles   = [for r in ["lj-dio-lambda-exec", "lj-dio-github-actions-deploy", "lj-dio-sommething-invoke"] : "arn:aws:iam::${local.account_id}:role/${r}"]
     permission_set = "arn:aws:sso:::permissionSet/ssoins-722334ffaa3b5076/ps-722309dd972cb8bb"
   }
+}
+
+module "dio_lambda_access" {
+  source = "./modules/lambda-access"
+
+  project          = "dio"
+  account_id       = local.account_id
+  region           = local.region
+  function_pattern = "lj-dio-*"
+  resource_groups  = false
 }
 
 module "dio" {
@@ -25,7 +31,7 @@ module "dio" {
   boundary_policy_json = data.aws_iam_policy_document.dio_boundary.json
   read_policy_json     = data.aws_iam_policy_document.dio_read.json
   write_policy_json    = data.aws_iam_policy_document.dio_write.json
-  operate_policy_json  = data.aws_iam_policy_document.dio_operate.json
+  operate_policy_json  = module.dio_lambda_access.operate_policy_json
 }
 
 import {
@@ -39,17 +45,7 @@ import {
 }
 
 data "aws_iam_policy_document" "dio_boundary" {
-  statement {
-    sid       = "ReadParameters"
-    actions   = ["ssm:GetParameter", "ssm:GetParameters"]
-    resources = [local.dio.ssm_params]
-  }
-
-  statement {
-    sid       = "WriteLogs"
-    actions   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
-    resources = [local.dio.log_group, "${local.dio.log_group}:*"]
-  }
+  source_policy_documents = [module.dio_lambda_access.boundary_policy_json]
 
   statement {
     sid       = "InvokeFunction"
@@ -59,23 +55,7 @@ data "aws_iam_policy_document" "dio_boundary" {
 }
 
 data "aws_iam_policy_document" "dio_read" {
-  statement {
-    sid       = "ReadFunctions"
-    actions   = ["lambda:Get*", "lambda:List*"]
-    resources = [local.dio.functions]
-  }
-
-  statement {
-    sid       = "ListLogGroups"
-    actions   = ["logs:DescribeLogGroups"]
-    resources = ["*"]
-  }
-
-  statement {
-    sid       = "ReadLogGroups"
-    actions   = ["logs:ListTagsForResource", "logs:ListTagsLogGroup"]
-    resources = [local.dio.log_group, "${local.dio.log_group}:*"]
-  }
+  source_policy_documents = [module.dio_lambda_access.read_policy_json]
 
   statement {
     sid       = "ReadVercelProvider"
@@ -92,17 +72,7 @@ data "aws_iam_policy_document" "dio_read" {
 }
 
 data "aws_iam_policy_document" "dio_write" {
-  statement {
-    sid       = "ManageFunctions"
-    actions   = ["lambda:*"]
-    resources = [local.dio.functions]
-  }
-
-  statement {
-    sid       = "ManageLogGroups"
-    actions   = ["logs:*"]
-    resources = [local.dio.log_group, "${local.dio.log_group}:*"]
-  }
+  source_policy_documents = [module.dio_lambda_access.write_policy_json]
 
   statement {
     sid = "ManageVercelProvider"
@@ -116,18 +86,6 @@ data "aws_iam_policy_document" "dio_write" {
     resources = [local.dio.vercel_oidc]
   }
 
-  statement {
-    sid       = "PassRolesToLambda"
-    actions   = ["iam:PassRole"]
-    resources = [local.dio.roles]
-
-    condition {
-      test     = "StringEquals"
-      variable = "iam:PassedToService"
-      values   = ["lambda.amazonaws.com"]
-    }
-  }
-
   # Removed once the first CI apply has deleted the roles dio defined before joining stych.
   statement {
     sid = "RemoveLegacyRoles"
@@ -137,25 +95,5 @@ data "aws_iam_policy_document" "dio_write" {
       "iam:ListInstanceProfilesForRole",
     ]
     resources = local.dio.legacy_roles
-  }
-}
-
-data "aws_iam_policy_document" "dio_operate" {
-  statement {
-    sid       = "ManageParameters"
-    actions   = ["ssm:GetParameter", "ssm:GetParameters", "ssm:PutParameter", "ssm:GetParameterHistory"]
-    resources = [local.dio.ssm_params]
-  }
-
-  statement {
-    sid       = "ReadLogs"
-    actions   = ["logs:FilterLogEvents", "logs:GetLogEvents", "logs:DescribeLogStreams", "logs:StartQuery", "logs:StopQuery"]
-    resources = [local.dio.log_group, "${local.dio.log_group}:*"]
-  }
-
-  statement {
-    sid       = "QueryResults"
-    actions   = ["logs:GetQueryResults", "logs:DescribeQueries"]
-    resources = ["*"]
   }
 }
