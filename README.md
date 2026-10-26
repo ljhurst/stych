@@ -154,6 +154,11 @@ provider. Every repo in `github/repos.tf` gets:
 - read-only workflow tokens that can't approve pull requests
 - Dependabot vulnerability alerts and security updates
 
+Each repo also carries its own `.github/dependabot.yml`: version updates run
+monthly, one grouped PR per ecosystem, with a 7-day cooldown. Security
+updates ignore the schedule and cooldown and arrive as one grouped PR. Copy
+`.github/dependabot.yml` from this repo and keep the ecosystems the repo uses.
+
 stych's release tags (`v*.*.*`) are protected by their own ruleset. Fork
 pull request approval has no Terraform resource, so a script sets it. Apply
 both from a laptop:
