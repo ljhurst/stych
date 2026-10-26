@@ -58,7 +58,7 @@ data "aws_iam_policy_document" "bracket_clash_read" {
 
   statement {
     sid       = "ReadCertificate"
-    actions   = ["acm:DescribeCertificate", "acm:ListTagsForCertificate"]
+    actions   = ["acm:DescribeCertificate", "acm:GetCertificate", "acm:ListTagsForCertificate"]
     resources = [aws_acm_certificate.wildcard.arn]
   }
 }
