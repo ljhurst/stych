@@ -87,7 +87,7 @@ jobs:
       - name: Plan
         run: |
           terraform -chdir="$WORKDIR" init -input=false -no-color
-          terraform -chdir="$WORKDIR" plan -input=false -no-color -out=tfplan | tee "$RUNNER_TEMP/plan.log"
+          terraform -chdir="$WORKDIR" plan -input=false -no-color -lock=false -out=tfplan | tee "$RUNNER_TEMP/plan.log"
 
       - name: Comment plan on the PR
         env:

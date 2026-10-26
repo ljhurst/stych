@@ -56,6 +56,9 @@ guidance here first.
 
 - **Plan, read the plan, apply the saved plan.** Never apply something
   different from what was reviewed.
+- **PR plans skip the state lock.** They are read-only, so they never block
+  each other or an apply. The apply plans again under the lock before it
+  changes anything.
 - **Every destroy and replace must be expected.** The shared workflow puts a
   warning at the top of the PR comment when a plan contains one.
 - **Bring existing resources in with `import`, not by recreating them.**
