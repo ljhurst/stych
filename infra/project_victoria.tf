@@ -1,10 +1,5 @@
 locals {
   victoria = {
-    functions   = "arn:aws:lambda:${local.region}:${local.account_id}:function:lj-victoria-*"
-    log_group   = "arn:aws:logs:${local.region}:${local.account_id}:log-group:/aws/lambda/lj-victoria-*"
-    roles       = "arn:aws:iam::${local.account_id}:role/victoria-*"
-    groups      = "arn:aws:resource-groups:${local.region}:${local.account_id}:group/victoria-*"
-    ssm_params  = "arn:aws:ssm:${local.region}:${local.account_id}:parameter/victoria/*"
     wiki_bucket = "arn:aws:s3:::lj-victoria-wiki"
 
     # Only the seed pages Terraform manages; CI never reads the rest of the wiki.
@@ -22,6 +17,15 @@ module "victoria_cloudfront_access" {
   project         = "victoria"
   account_id      = local.account_id
   certificate_arn = aws_acm_certificate.wildcard.arn
+}
+
+module "victoria_lambda_access" {
+  source = "./modules/lambda-access"
+
+  project          = "victoria"
+  account_id       = local.account_id
+  region           = local.region
+  function_pattern = "lj-victoria-*"
 }
 
 module "victoria" {
@@ -42,6 +46,8 @@ module "victoria" {
 }
 
 data "aws_iam_policy_document" "victoria_boundary" {
+  source_policy_documents = [module.victoria_lambda_access.boundary_policy_json]
+
   statement {
     sid       = "ListWiki"
     actions   = ["s3:ListBucket"]
@@ -54,27 +60,10 @@ data "aws_iam_policy_document" "victoria_boundary" {
     resources = ["${local.victoria.wiki_bucket}/*"]
   }
 
-  statement {
-    sid       = "ReadParameters"
-    actions   = ["ssm:GetParameter", "ssm:GetParameters"]
-    resources = [local.victoria.ssm_params]
-  }
-
-  statement {
-    sid       = "WriteLogs"
-    actions   = ["logs:CreateLogGroup", "logs:CreateLogStream", "logs:PutLogEvents"]
-    resources = [local.victoria.log_group, "${local.victoria.log_group}:*"]
-  }
 }
 
 data "aws_iam_policy_document" "victoria_read" {
-  source_policy_documents = [module.victoria_cloudfront_access.read_policy_json]
-
-  statement {
-    sid       = "ReadFunctions"
-    actions   = ["lambda:Get*", "lambda:List*"]
-    resources = [local.victoria.functions]
-  }
+  source_policy_documents = [module.victoria_cloudfront_access.read_policy_json, module.victoria_lambda_access.read_policy_json]
 
   statement {
     sid       = "ReadWikiBucket"
@@ -88,33 +77,10 @@ data "aws_iam_policy_document" "victoria_read" {
     resources = local.victoria.managed_pages
   }
 
-  statement {
-    sid       = "ListLogGroups"
-    actions   = ["logs:DescribeLogGroups"]
-    resources = ["*"]
-  }
-
-  statement {
-    sid       = "ReadLogGroups"
-    actions   = ["logs:ListTagsForResource", "logs:ListTagsLogGroup"]
-    resources = [local.victoria.log_group, "${local.victoria.log_group}:*"]
-  }
-
-  statement {
-    sid       = "ReadResourceGroups"
-    actions   = ["resource-groups:Get*", "resource-groups:List*"]
-    resources = [local.victoria.groups]
-  }
 }
 
 data "aws_iam_policy_document" "victoria_write" {
-  source_policy_documents = [module.victoria_cloudfront_access.write_policy_json]
-
-  statement {
-    sid       = "ManageFunctions"
-    actions   = ["lambda:*"]
-    resources = [local.victoria.functions]
-  }
+  source_policy_documents = [module.victoria_cloudfront_access.write_policy_json, module.victoria_lambda_access.write_policy_json]
 
   statement {
     sid       = "ManageWikiBucket"
@@ -128,32 +94,11 @@ data "aws_iam_policy_document" "victoria_write" {
     resources = local.victoria.managed_pages
   }
 
-  statement {
-    sid       = "ManageLogGroups"
-    actions   = ["logs:*"]
-    resources = [local.victoria.log_group, "${local.victoria.log_group}:*"]
-  }
-
-  statement {
-    sid       = "ManageResourceGroups"
-    actions   = ["resource-groups:*"]
-    resources = [local.victoria.groups]
-  }
-
-  statement {
-    sid       = "PassRolesToLambda"
-    actions   = ["iam:PassRole"]
-    resources = [local.victoria.roles]
-
-    condition {
-      test     = "StringEquals"
-      variable = "iam:PassedToService"
-      values   = ["lambda.amazonaws.com"]
-    }
-  }
 }
 
 data "aws_iam_policy_document" "victoria_operate" {
+  source_policy_documents = [module.victoria_lambda_access.operate_policy_json]
+
   statement {
     sid       = "ListWiki"
     actions   = ["s3:ListBucket"]
@@ -166,21 +111,4 @@ data "aws_iam_policy_document" "victoria_operate" {
     resources = ["${local.victoria.wiki_bucket}/*"]
   }
 
-  statement {
-    sid       = "ManageParameters"
-    actions   = ["ssm:GetParameter", "ssm:GetParameters", "ssm:PutParameter", "ssm:GetParameterHistory"]
-    resources = [local.victoria.ssm_params]
-  }
-
-  statement {
-    sid       = "ReadLogs"
-    actions   = ["logs:FilterLogEvents", "logs:GetLogEvents", "logs:DescribeLogStreams", "logs:StartQuery", "logs:StopQuery"]
-    resources = [local.victoria.log_group, "${local.victoria.log_group}:*"]
-  }
-
-  statement {
-    sid       = "QueryResults"
-    actions   = ["logs:GetQueryResults", "logs:DescribeQueries"]
-    resources = ["*"]
-  }
 }
