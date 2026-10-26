@@ -2,6 +2,14 @@ locals {
   bucket = "arn:aws:s3:::${var.bucket_name}"
 }
 
+module "cloudfront" {
+  source = "../cloudfront-access"
+
+  project         = var.project
+  account_id      = var.account_id
+  certificate_arn = var.certificate_arn
+}
+
 # The site has no workload roles; the project-access module still requires a boundary.
 data "aws_iam_policy_document" "boundary" {
   statement {
@@ -12,6 +20,8 @@ data "aws_iam_policy_document" "boundary" {
 }
 
 data "aws_iam_policy_document" "read" {
+  source_policy_documents = [module.cloudfront.read_policy_json]
+
   statement {
     sid       = "ReadSiteBucket"
     actions   = ["s3:ListBucket", "s3:GetBucket*", "s3:GetAccelerateConfiguration", "s3:GetLifecycleConfiguration", "s3:GetReplicationConfiguration", "s3:GetEncryptionConfiguration"]
@@ -19,32 +29,15 @@ data "aws_iam_policy_document" "read" {
   }
 
   statement {
-    sid = "ReadDistribution"
-    actions = [
-      "cloudfront:GetDistribution",
-      "cloudfront:GetOriginAccessControl",
-      "cloudfront:GetResponseHeadersPolicy",
-      "cloudfront:GetCachePolicy",
-      "cloudfront:ListCachePolicies",
-      "cloudfront:ListTagsForResource",
-    ]
+    sid       = "ReadOriginAccessControl"
+    actions   = ["cloudfront:GetOriginAccessControl"]
     resources = ["*"]
-  }
-
-  statement {
-    sid       = "FindCertificate"
-    actions   = ["acm:ListCertificates"]
-    resources = ["*"]
-  }
-
-  statement {
-    sid       = "ReadCertificate"
-    actions   = ["acm:DescribeCertificate", "acm:GetCertificate", "acm:ListTagsForCertificate"]
-    resources = [var.certificate_arn]
   }
 }
 
 data "aws_iam_policy_document" "write" {
+  source_policy_documents = [module.cloudfront.write_policy_json]
+
   statement {
     sid       = "ManageSiteBucket"
     actions   = ["s3:*"]
@@ -58,25 +51,8 @@ data "aws_iam_policy_document" "write" {
   }
 
   statement {
-    sid       = "CreateDistribution"
-    actions   = ["cloudfront:CreateDistribution", "cloudfront:TagResource"]
-    resources = ["*"]
-
-    condition {
-      test     = "StringEquals"
-      variable = "aws:RequestTag/Project"
-      values   = [var.project]
-    }
-  }
-
-  statement {
-    sid = "ManageOwnDistribution"
-    actions = [
-      "cloudfront:UpdateDistribution",
-      "cloudfront:DeleteDistribution",
-      "cloudfront:UntagResource",
-      "cloudfront:CreateInvalidation",
-    ]
+    sid       = "InvalidateOwnDistribution"
+    actions   = ["cloudfront:CreateInvalidation"]
     resources = ["arn:aws:cloudfront::${var.account_id}:distribution/*"]
 
     condition {

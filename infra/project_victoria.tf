@@ -16,8 +16,8 @@ locals {
   }
 }
 
-module "victoria_front_access" {
-  source = "./modules/function-url-access"
+module "victoria_cloudfront_access" {
+  source = "./modules/cloudfront-access"
 
   project         = "victoria"
   account_id      = local.account_id
@@ -68,7 +68,7 @@ data "aws_iam_policy_document" "victoria_boundary" {
 }
 
 data "aws_iam_policy_document" "victoria_read" {
-  source_policy_documents = [module.victoria_front_access.read_policy_json]
+  source_policy_documents = [module.victoria_cloudfront_access.read_policy_json]
 
   statement {
     sid       = "ReadFunctions"
@@ -108,7 +108,7 @@ data "aws_iam_policy_document" "victoria_read" {
 }
 
 data "aws_iam_policy_document" "victoria_write" {
-  source_policy_documents = [module.victoria_front_access.write_policy_json]
+  source_policy_documents = [module.victoria_cloudfront_access.write_policy_json]
 
   statement {
     sid       = "ManageFunctions"

@@ -137,7 +137,7 @@ module "front" {
 ```
 
 The project's CI roles need the CloudFront and certificate permissions: add a
-`function-url-access` module in `infra/project_<name>.tf` and list its
+`cloudfront-access` module in `infra/project_<name>.tf` and list its
 `read_policy_json` and `write_policy_json` as `source_policy_documents` of the
 project's read and write policies (see `project_victoria.tf`).
 
