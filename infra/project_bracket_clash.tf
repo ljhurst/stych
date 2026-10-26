@@ -36,6 +36,31 @@ data "aws_iam_policy_document" "bracket_clash_read" {
     actions   = ["s3:ListBucket", "s3:GetBucket*", "s3:GetAccelerateConfiguration", "s3:GetLifecycleConfiguration", "s3:GetReplicationConfiguration", "s3:GetEncryptionConfiguration"]
     resources = [local.bracket_clash.bucket]
   }
+
+  statement {
+    sid = "ReadDistribution"
+    actions = [
+      "cloudfront:GetDistribution",
+      "cloudfront:GetOriginAccessControl",
+      "cloudfront:GetResponseHeadersPolicy",
+      "cloudfront:GetCachePolicy",
+      "cloudfront:ListCachePolicies",
+      "cloudfront:ListTagsForResource",
+    ]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "FindCertificate"
+    actions   = ["acm:ListCertificates"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid       = "ReadCertificate"
+    actions   = ["acm:DescribeCertificate", "acm:ListTagsForCertificate"]
+    resources = [aws_acm_certificate.wildcard.arn]
+  }
 }
 
 data "aws_iam_policy_document" "bracket_clash_write" {
@@ -49,6 +74,61 @@ data "aws_iam_policy_document" "bracket_clash_write" {
     sid       = "DeploySite"
     actions   = ["s3:PutObject", "s3:DeleteObject"]
     resources = ["${local.bracket_clash.bucket}/*"]
+  }
+
+  statement {
+    sid       = "CreateDistribution"
+    actions   = ["cloudfront:CreateDistribution", "cloudfront:TagResource"]
+    resources = ["*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:RequestTag/Project"
+      values   = ["bracket-clash"]
+    }
+  }
+
+  statement {
+    sid = "ManageOwnDistribution"
+    actions = [
+      "cloudfront:UpdateDistribution",
+      "cloudfront:DeleteDistribution",
+      "cloudfront:UntagResource",
+      "cloudfront:CreateInvalidation",
+    ]
+    resources = ["arn:aws:cloudfront::${local.account_id}:distribution/*"]
+
+    condition {
+      test     = "StringEquals"
+      variable = "aws:ResourceTag/Project"
+      values   = ["bracket-clash"]
+    }
+  }
+
+  # Origin access controls and response headers policies can't be tagged, so
+  # they can only be scoped to the account.
+  statement {
+    sid       = "CreateDistributionParts"
+    actions   = ["cloudfront:CreateOriginAccessControl", "cloudfront:CreateResponseHeadersPolicy"]
+    resources = ["*"]
+  }
+
+  statement {
+    sid = "ManageDistributionParts"
+    actions = [
+      "cloudfront:UpdateOriginAccessControl",
+      "cloudfront:DeleteOriginAccessControl",
+    ]
+    resources = ["arn:aws:cloudfront::${local.account_id}:origin-access-control/*"]
+  }
+
+  statement {
+    sid = "ManageResponseHeadersPolicies"
+    actions = [
+      "cloudfront:UpdateResponseHeadersPolicy",
+      "cloudfront:DeleteResponseHeadersPolicy",
+    ]
+    resources = ["arn:aws:cloudfront::${local.account_id}:response-headers-policy/*"]
   }
 }
 

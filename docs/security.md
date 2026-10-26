@@ -34,6 +34,12 @@ guidance here first.
   - CI roles live under `/stych/`, outside every project's role pattern.
   - Every role a project creates must carry the project's permissions
     boundary, and the boundary can't be removed.
+- **Site buckets are private.** A static site is served through CloudFront
+  with origin access control, never from a public S3 endpoint.
+- **A project changes only its own distributions.** Updating, deleting and
+  invalidating CloudFront distributions requires the project's `Project` tag.
+  Origin access controls and response headers policies can't be tagged, so a
+  project's role can change those in the account.
 - **Read policies cover everything Terraform's refresh reads.** A missing
   read makes a plan show a live resource as deleted. For S3 that includes
   `s3:ListBucket`.
@@ -59,6 +65,8 @@ guidance here first.
 - **PR plans skip the state lock.** They are read-only, so they never block
   each other or an apply. The apply plans again under the lock before it
   changes anything.
+- **Keep the certificate's validation records in DNS.** ACM renews through
+  them, and removing one lets the wildcard certificate expire.
 - **Every destroy and replace must be expected.** The shared workflow puts a
   warning at the top of the PR comment when a plan contains one.
 - **Bring existing resources in with `import`, not by recreating them.**

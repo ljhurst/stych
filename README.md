@@ -91,6 +91,33 @@ the PR previewed:
       distribution-id: ...        # optional CloudFront invalidation
 ```
 
+### Serving it on `bylukehurst.com`
+
+The `static-site` module puts a site behind CloudFront at
+`<name>.bylukehurst.com`: the bucket is private and readable only through the
+distribution, HTTP redirects to HTTPS, and a response headers policy sets the
+security headers. It finds the wildcard certificate in `infra/` by domain, so
+the default AWS provider must be `us-east-1`.
+
+```hcl
+module "site" {
+  source                  = "git::https://github.com/ljhurst/stych.git//infra/modules/static-site?ref=vX.Y.Z"
+  bucket_name             = "lj-<name>"
+  domain_name             = "<name>.bylukehurst.com"
+  content_security_policy = "default-src 'self'"   # allow what the page loads
+}
+
+moved {   # adopt an existing bucket and policy instead of recreating them
+  from = aws_s3_bucket.static_site
+  to   = module.site.aws_s3_bucket.this
+}
+```
+
+Pin a `vX.Y.Z` release, not `v1`: `v1` moves. After the apply, add a DNS-only
+`CNAME <name>` in Cloudflare pointing at the `cname_target` output, and pass
+the `distribution_id` output to the `site` job so each deploy invalidates the
+cache.
+
 ## Checking a project
 
 Every repo's `check.yml` runs its own pre-commit hooks:
@@ -129,6 +156,17 @@ terraform -chdir=infra plan -out=stych.tfplan
 terraform -chdir=infra apply stych.tfplan
 scripts/verify-access.sh
 ```
+
+The wildcard certificate needs two applies the first time, because the apply
+waits for DNS validation and prints nothing meanwhile:
+
+1. `terraform -chdir=infra apply -target=aws_acm_certificate.wildcard`
+2. Add the records from `terraform -chdir=infra output
+   certificate_validation_records` in Cloudflare as DNS only.
+3. Run the full apply.
+
+Keep those records. ACM renews the certificate through them, and deleting one
+breaks every site in about 13 months.
 
 `scripts/verify-access.sh` runs every project's three principals through the
 standard allow/deny matrix:

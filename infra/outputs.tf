@@ -57,3 +57,19 @@ output "github_oidc_provider_arn" {
   description = "GitHub Actions OIDC provider that project CI roles trust"
   value       = aws_iam_openid_connect_provider.github.arn
 }
+
+output "certificate_arn" {
+  description = "Wildcard certificate every static site's CloudFront distribution uses"
+  value       = aws_acm_certificate_validation.wildcard.certificate_arn
+}
+
+output "certificate_validation_records" {
+  description = "DNS records that validate the wildcard certificate. Add them in Cloudflare as DNS only and keep them: ACM renews through them, and removing one breaks every site in about 13 months"
+  value = distinct([
+    for o in aws_acm_certificate.wildcard.domain_validation_options : {
+      name  = o.resource_record_name
+      type  = o.resource_record_type
+      value = o.resource_record_value
+    }
+  ])
+}
