@@ -76,7 +76,9 @@ guidance here first.
   - `main` needs a PR and the required checks, and can't be force-pushed or
     deleted;
   - workflow tokens are read-only and can't approve PRs;
-  - Dependabot alerts and security updates are on;
+  - Dependabot alerts and security updates are on, and each repo's
+    `dependabot.yml` groups updates into one PR per ecosystem, monthly, with a
+    cooldown, while security updates stay immediate;
   - release tags are immutable.
 - **Workflows:**
   - grant `id-token` and `pull-requests` only on the jobs that need them;

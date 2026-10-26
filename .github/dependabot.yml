@@ -1,0 +1,32 @@
+---
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directories:
+      - /
+      - /.github/actions/*
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      monthly-batch:
+        patterns: ["*"]
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
+
+  - package-ecosystem: terraform
+    directories:
+      - /github
+      - /infra
+    schedule:
+      interval: monthly
+    cooldown:
+      default-days: 7
+    groups:
+      monthly-batch:
+        patterns: ["*"]
+      security:
+        applies-to: security-updates
+        patterns: ["*"]
