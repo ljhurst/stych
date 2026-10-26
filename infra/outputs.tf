@@ -53,6 +53,16 @@ output "bracket_clash_apply_role_arn" {
   value       = module.bracket_clash.apply_role_arn
 }
 
+output "dio_plan_role_arn" {
+  description = "Role dio's PR plan jobs assume"
+  value       = module.dio.plan_role_arn
+}
+
+output "dio_apply_role_arn" {
+  description = "Role dio's apply job on main assumes"
+  value       = module.dio.apply_role_arn
+}
+
 output "github_oidc_provider_arn" {
   description = "GitHub Actions OIDC provider that project CI roles trust"
   value       = aws_iam_openid_connect_provider.github.arn
