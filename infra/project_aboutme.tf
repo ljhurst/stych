@@ -22,7 +22,7 @@ module "aboutme_site_access" {
   source = "./modules/static-site-access"
 
   project         = "aboutme"
-  bucket_name     = "lj-aboutme"
+  bucket_name     = "lj-aboutme-site"
   account_id      = local.account_id
   certificate_arn = aws_acm_certificate.wildcard.arn
 }
