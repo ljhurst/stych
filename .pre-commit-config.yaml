@@ -42,6 +42,11 @@ repos:
       - id: shfmt
         args: [--write, --indent=2]
 
+  - repo: https://github.com/biomejs/pre-commit
+    rev: v2.6.3
+    hooks:
+      - id: biome-check
+
   - repo: https://github.com/antonbabenko/pre-commit-terraform
     rev: v1.109.3
     hooks:
