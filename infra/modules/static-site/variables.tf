@@ -8,6 +8,12 @@ variable "domain_name" {
   type        = string
 }
 
+variable "region" {
+  description = "Region of the site's bucket; defaults to the provider's region. CloudFront and its certificate stay in us-east-1 either way"
+  type        = string
+  default     = null
+}
+
 variable "content_security_policy" {
   description = "Content-Security-Policy header value"
   type        = string
