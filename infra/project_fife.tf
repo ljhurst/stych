@@ -1,0 +1,144 @@
+locals {
+  fife = {
+    permission_set = "arn:aws:sso:::permissionSet/ssoins-722334ffaa3b5076/ps-722345f159460a9f"
+    tables = [
+      "arn:aws:dynamodb:${local.region}:${local.account_id}:table/fife-*",
+      "arn:aws:dynamodb:${local.region}:${local.account_id}:table/fife-*/index/*",
+    ]
+    policies = "arn:aws:iam::${local.account_id}:policy/fife-*"
+    api = [
+      "arn:aws:apigateway:${local.region}::/apis",
+      "arn:aws:apigateway:${local.region}::/apis/*",
+      "arn:aws:apigateway:${local.region}::/tags/*",
+    ]
+    table_data_ops = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:UpdateItem", "dynamodb:DeleteItem", "dynamodb:Query", "dynamodb:Scan", "dynamodb:ConditionCheckItem"]
+  }
+}
+
+module "fife_lambda_access" {
+  source = "./modules/lambda-access"
+
+  project          = "fife"
+  account_id       = local.account_id
+  region           = local.region
+  function_pattern = "fife-*"
+  resource_groups  = false
+}
+
+module "fife_site_access" {
+  source = "./modules/static-site-access"
+
+  project         = "fife"
+  bucket_name     = "lj-fife"
+  account_id      = local.account_id
+  certificate_arn = aws_acm_certificate.wildcard.arn
+}
+
+module "fife" {
+  source = "./modules/project-access"
+
+  name                  = "fife"
+  github_subject_prefix = "repo:ljhurst/fife"
+  account_id            = local.account_id
+  oidc_provider_arn     = aws_iam_openid_connect_provider.github.arn
+  sso_instance_arn      = local.sso_instance_arn
+  sso_user_id           = local.sso_user_id
+  state_bucket_arn      = aws_s3_bucket.state.arn
+
+  boundary_policy_json = data.aws_iam_policy_document.fife_boundary.json
+  read_policy_json     = data.aws_iam_policy_document.fife_read.json
+  write_policy_json    = data.aws_iam_policy_document.fife_write.json
+  operate_policy_json  = data.aws_iam_policy_document.fife_operate.json
+}
+
+import {
+  to = module.fife.aws_ssoadmin_permission_set.deploy
+  id = "${local.fife.permission_set},${local.sso_instance_arn}"
+}
+
+import {
+  to = module.fife.aws_ssoadmin_account_assignment.deploy
+  id = "${local.sso_user_id},USER,${local.account_id},AWS_ACCOUNT,${local.fife.permission_set},${local.sso_instance_arn}"
+}
+
+data "aws_iam_policy_document" "fife_boundary" {
+  source_policy_documents = [module.fife_lambda_access.boundary_policy_json]
+
+  statement {
+    sid       = "ReadWriteTables"
+    actions   = local.fife.table_data_ops
+    resources = local.fife.tables
+  }
+}
+
+data "aws_iam_policy_document" "fife_read" {
+  source_policy_documents = [module.fife_site_access.read_policy_json, module.fife_lambda_access.read_policy_json]
+
+  statement {
+    sid       = "ReadTables"
+    actions   = ["dynamodb:Describe*", "dynamodb:ListTagsOfResource", "dynamodb:GetResourcePolicy"]
+    resources = local.fife.tables
+  }
+
+  statement {
+    sid       = "ReadApi"
+    actions   = ["apigateway:GET"]
+    resources = local.fife.api
+  }
+
+  statement {
+    sid       = "ReadPolicies"
+    actions   = ["iam:GetPolicy", "iam:GetPolicyVersion", "iam:ListPolicyVersions", "iam:ListPolicyTags"]
+    resources = [local.fife.policies]
+  }
+}
+
+data "aws_iam_policy_document" "fife_write" {
+  source_policy_documents = [module.fife_site_access.write_policy_json, module.fife_lambda_access.write_policy_json]
+
+  statement {
+    sid = "ManageTables"
+    actions = [
+      "dynamodb:CreateTable",
+      "dynamodb:UpdateTable",
+      "dynamodb:DeleteTable",
+      "dynamodb:TagResource",
+      "dynamodb:UntagResource",
+      "dynamodb:UpdateTimeToLive",
+      "dynamodb:UpdateContinuousBackups",
+      "dynamodb:PutResourcePolicy",
+      "dynamodb:DeleteResourcePolicy",
+    ]
+    resources = local.fife.tables
+  }
+
+  statement {
+    sid       = "ManageApi"
+    actions   = ["apigateway:*"]
+    resources = local.fife.api
+  }
+
+  statement {
+    sid = "ManagePolicies"
+    actions = [
+      "iam:CreatePolicy",
+      "iam:DeletePolicy",
+      "iam:CreatePolicyVersion",
+      "iam:DeletePolicyVersion",
+      "iam:SetDefaultPolicyVersion",
+      "iam:TagPolicy",
+      "iam:UntagPolicy",
+    ]
+    resources = [local.fife.policies]
+  }
+}
+
+data "aws_iam_policy_document" "fife_operate" {
+  source_policy_documents = [module.fife_site_access.operate_policy_json, module.fife_lambda_access.operate_policy_json]
+
+  statement {
+    sid       = "TableData"
+    actions   = concat(local.fife.table_data_ops, ["dynamodb:DescribeTable"])
+    resources = local.fife.tables
+  }
+}

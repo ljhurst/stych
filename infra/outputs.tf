@@ -63,6 +63,16 @@ output "dio_apply_role_arn" {
   value       = module.dio.apply_role_arn
 }
 
+output "fife_plan_role_arn" {
+  description = "Role fife's PR plan jobs assume"
+  value       = module.fife.plan_role_arn
+}
+
+output "fife_apply_role_arn" {
+  description = "Role fife's apply job on main assumes"
+  value       = module.fife.apply_role_arn
+}
+
 output "github_oidc_provider_arn" {
   description = "GitHub Actions OIDC provider that project CI roles trust"
   value       = aws_iam_openid_connect_provider.github.arn
