@@ -1,6 +1,5 @@
 locals {
   aboutme = {
-    permission_set = "arn:aws:sso:::permissionSet/ssoins-722334ffaa3b5076/ps-7223d4bb1946499b"
     api = [
       "arn:aws:apigateway:${local.region}::/restapis",
       "arn:aws:apigateway:${local.region}::/restapis/*",
