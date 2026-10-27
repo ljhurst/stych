@@ -1,28 +1,3 @@
-import {
-  to = aws_s3_bucket.state
-  id = "lj-tf-state"
-}
-
-import {
-  to = aws_s3_bucket_versioning.state
-  id = "lj-tf-state"
-}
-
-import {
-  to = aws_s3_bucket_server_side_encryption_configuration.state
-  id = "lj-tf-state"
-}
-
-import {
-  to = aws_s3_bucket_public_access_block.state
-  id = "lj-tf-state"
-}
-
-import {
-  to = aws_s3_bucket_ownership_controls.state
-  id = "lj-tf-state"
-}
-
 resource "aws_s3_bucket" "state" {
   bucket = "lj-tf-state"
 
