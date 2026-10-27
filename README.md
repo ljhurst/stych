@@ -201,6 +201,10 @@ Lock Terraform providers for both platforms (`terraform providers lock
 -platform=darwin_arm64 -platform=linux_amd64`). Otherwise the validate hook
 rewrites the lock file in CI and the check fails.
 
+The workflow caches the pre-commit environments and the tflint plugin, keyed on
+`.pre-commit-config.yaml` and `.tflint.hcl`, so `tflint --init` rarely calls
+GitHub's rate-limited API.
+
 ## Applying `infra/`
 
 `infra/` grants every other project its permissions, so it is applied from a

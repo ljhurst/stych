@@ -49,8 +49,10 @@ jobs:
 
       - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
         with:
-          path: ~/.cache/pre-commit
-          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+          path: |
+            ~/.cache/pre-commit
+            ~/.tflint.d/plugins
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml', '.tflint.hcl') }}
 
       - name: Run every pre-commit hook
         run: pipx run pre-commit==4.7.0 run --all-files --show-diff-on-failure
