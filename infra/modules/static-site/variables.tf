@@ -13,3 +13,9 @@ variable "content_security_policy" {
   type        = string
   default     = "default-src 'self'"
 }
+
+variable "directory_index" {
+  description = "Serve /dir/ and /dir as /dir/index.html, for sites built with one HTML file per page"
+  type        = bool
+  default     = false
+}

@@ -1,5 +1,6 @@
 locals {
-  bucket = "arn:aws:s3:::${var.bucket_name}"
+  bucket   = "arn:aws:s3:::${var.bucket_name}"
+  function = "arn:aws:cloudfront::${var.account_id}:function/${var.bucket_name}-directory-index"
 }
 
 module "cloudfront" {
@@ -32,6 +33,12 @@ data "aws_iam_policy_document" "read" {
     sid       = "ReadOriginAccessControl"
     actions   = ["cloudfront:GetOriginAccessControl"]
     resources = ["*"]
+  }
+
+  statement {
+    sid       = "ReadDirectoryIndexFunction"
+    actions   = ["cloudfront:DescribeFunction", "cloudfront:GetFunction"]
+    resources = [local.function]
   }
 }
 
@@ -77,6 +84,17 @@ data "aws_iam_policy_document" "write" {
       "cloudfront:DeleteOriginAccessControl",
     ]
     resources = ["arn:aws:cloudfront::${var.account_id}:origin-access-control/*"]
+  }
+
+  statement {
+    sid = "ManageDirectoryIndexFunction"
+    actions = [
+      "cloudfront:CreateFunction",
+      "cloudfront:UpdateFunction",
+      "cloudfront:PublishFunction",
+      "cloudfront:DeleteFunction",
+    ]
+    resources = [local.function]
   }
 
   statement {

@@ -90,6 +90,15 @@ resource "aws_cloudfront_response_headers_policy" "this" {
   }
 }
 
+resource "aws_cloudfront_function" "directory_index" {
+  count = var.directory_index ? 1 : 0
+
+  name    = "${var.bucket_name}-directory-index"
+  runtime = "cloudfront-js-2.0"
+  publish = true
+  code    = file("${path.module}/directory-index.js")
+}
+
 resource "aws_cloudfront_distribution" "this" {
   enabled             = true
   is_ipv6_enabled     = true
@@ -112,6 +121,15 @@ resource "aws_cloudfront_distribution" "this" {
     compress                   = true
     cache_policy_id            = data.aws_cloudfront_cache_policy.optimized.id
     response_headers_policy_id = aws_cloudfront_response_headers_policy.this.id
+
+    dynamic "function_association" {
+      for_each = aws_cloudfront_function.directory_index
+
+      content {
+        event_type   = "viewer-request"
+        function_arn = function_association.value.arn
+      }
+    }
   }
 
   restrictions {
