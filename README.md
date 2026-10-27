@@ -147,6 +147,28 @@ The origin also gets an `X-Forwarded-Host` header with the public hostname, repl
 any value the viewer sent, for services that build their own URLs from it (Lasso's
 OIDC provider does).
 
+### Locking a Function URL
+
+A Function URL is public. Origin access control would lock it to CloudFront, but
+it replaces the viewer's `Authorization` header with its own signature, which
+breaks Bearer tokens and Basic client auth, and it needs every client to hash
+`POST` bodies. Instead the site shares a secret with its origin:
+
+1. Pass `origin_verify_kvs_arn = <output origin_verify_kvs_arn>` to the module and
+   to the project's `cloudfront-access` module. A viewer-request CloudFront
+   Function then sets `X-Origin-Verify` from the shared key value store, keyed by
+   the site's hostname, and `X-Viewer-Ip` from the connection (both replace any
+   value the viewer sent).
+2. Run `scripts/set-origin-verify.sh <hostname> <ssm-parameter>` with admin
+   credentials. It writes a fresh random secret to the key value store and to the
+   SSM parameter without printing it or putting it in Terraform state. Run it
+   again to rotate.
+3. The service compares `X-Origin-Verify` with its SSM parameter and answers 403
+   on a mismatch; when it matches, `X-Viewer-Ip` is the real client address.
+
+A host without a secret sends none, so the service refuses the request and the
+edge never fails. Do step 2 before the service starts enforcing.
+
 `origin_timeout` can't exceed the account's `Response timeout per origin`
 quota (120 seconds). The Function URL stays reachable directly: origin access
 control would make every client hash its POST bodies, which MCP clients do

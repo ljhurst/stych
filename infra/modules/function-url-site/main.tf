@@ -21,6 +21,16 @@ data "aws_acm_certificate" "this" {
   most_recent = true
 }
 
+resource "aws_cloudfront_function" "origin_verify" {
+  count = var.origin_verify_kvs_arn == "" ? 0 : 1
+
+  name                         = "${split(".", var.domain_name)[0]}-origin-verify"
+  runtime                      = "cloudfront-js-2.0"
+  publish                      = true
+  code                         = file("${path.module}/origin-verify.js")
+  key_value_store_associations = [var.origin_verify_kvs_arn]
+}
+
 resource "aws_cloudfront_distribution" "this" {
   enabled         = true
   is_ipv6_enabled = true
@@ -55,6 +65,15 @@ resource "aws_cloudfront_distribution" "this" {
     cache_policy_id            = data.aws_cloudfront_cache_policy.disabled.id
     origin_request_policy_id   = data.aws_cloudfront_origin_request_policy.all_viewer_except_host.id
     response_headers_policy_id = data.aws_cloudfront_response_headers_policy.security.id
+
+    dynamic "function_association" {
+      for_each = aws_cloudfront_function.origin_verify
+
+      content {
+        event_type   = "viewer-request"
+        function_arn = function_association.value.arn
+      }
+    }
   }
 
   restrictions {

@@ -12,3 +12,9 @@ variable "certificate_arn" {
   description = "Wildcard certificate the project's distributions use"
   type        = string
 }
+
+variable "origin_verify_kvs_arn" {
+  description = "Key value store holding the origin-verify secrets; set it for a project whose sites use origin verification, which lets its roles manage the project's <project>-* functions"
+  type        = string
+  default     = ""
+}
