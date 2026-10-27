@@ -6,7 +6,6 @@ locals {
       "arn:aws:apigateway:${local.region}::/restapis/*",
       "arn:aws:apigateway:${local.region}::/tags/*",
     ]
-    legacy_roles = [for r in ["lj-aboutme-lambda-exec", "lj-aboutme-github-actions-backend-deploy", "lj-aboutme-github-actions-frontend-deploy"] : "arn:aws:iam::${local.account_id}:role/${r}"]
   }
 }
 
@@ -46,16 +45,6 @@ module "aboutme" {
   operate_policy_json  = data.aws_iam_policy_document.aboutme_operate.json
 }
 
-import {
-  to = module.aboutme.aws_ssoadmin_permission_set.deploy
-  id = "${local.aboutme.permission_set},${local.sso_instance_arn}"
-}
-
-import {
-  to = module.aboutme.aws_ssoadmin_account_assignment.deploy
-  id = "${local.sso_user_id},USER,${local.account_id},AWS_ACCOUNT,${local.aboutme.permission_set},${local.sso_instance_arn}"
-}
-
 data "aws_iam_policy_document" "aboutme_read" {
   source_policy_documents = [module.aboutme_site_access.read_policy_json, module.aboutme_lambda_access.read_policy_json]
 
@@ -63,13 +52,6 @@ data "aws_iam_policy_document" "aboutme_read" {
     sid       = "ReadApi"
     actions   = ["apigateway:GET"]
     resources = local.aboutme.api
-  }
-
-  # The roles aboutme defined before joining stych, until the first CI apply removes them.
-  statement {
-    sid       = "ReadLegacyRoles"
-    actions   = ["iam:GetRole", "iam:GetRolePolicy", "iam:ListRolePolicies", "iam:ListAttachedRolePolicies", "iam:ListRoleTags"]
-    resources = local.aboutme.legacy_roles
   }
 }
 
@@ -80,17 +62,6 @@ data "aws_iam_policy_document" "aboutme_write" {
     sid       = "ManageApi"
     actions   = ["apigateway:*"]
     resources = local.aboutme.api
-  }
-
-  # Removed once the first CI apply has deleted the roles aboutme defined before joining stych.
-  statement {
-    sid = "RemoveLegacyRoles"
-    actions = [
-      "iam:DeleteRole",
-      "iam:DeleteRolePolicy",
-      "iam:ListInstanceProfilesForRole",
-    ]
-    resources = local.aboutme.legacy_roles
   }
 }
 

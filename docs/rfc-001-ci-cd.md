@@ -89,7 +89,7 @@ read state.
 | 7 | Porto and Victoria join; `terraform.yml` v1.1 adds `go-version-file` and `setup-uv` for their Go and uv builds (done) | porto, victoria | 6 |
 | 8 | `static-site.yml` and `pre-commit.yml`; train-spotting and bracket-clash join, their deploy roles move here; the check workflow goes into every repo on stych (done) | stych, train-spotting, bracket-clash, lasso, porto, victoria | 6 |
 | 9 | Fife joins: drops `ignore_changes`, backend through `terraform.yml`, frontend through `static-site.yml` (done; its own hostname follows) | fife | 8 |
-| 10 | aboutme and dio join | aboutme, dio | 8 |
+| 10 | aboutme and dio join (done) | aboutme, dio | 8 |
 
 Each row is an issue in its repo, tracked in #5. Every project's state is
 checked for secrets as part of joining.
