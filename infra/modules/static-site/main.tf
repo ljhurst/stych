@@ -13,10 +13,12 @@ data "aws_acm_certificate" "this" {
 }
 
 resource "aws_s3_bucket" "this" {
+  region = var.region
   bucket = var.bucket_name
 }
 
 resource "aws_s3_bucket_public_access_block" "this" {
+  region = var.region
   bucket = aws_s3_bucket.this.id
 
   block_public_acls       = true
@@ -26,6 +28,7 @@ resource "aws_s3_bucket_public_access_block" "this" {
 }
 
 resource "aws_s3_bucket_policy" "this" {
+  region = var.region
   bucket = aws_s3_bucket.this.id
   policy = data.aws_iam_policy_document.bucket.json
 

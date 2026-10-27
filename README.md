@@ -97,7 +97,8 @@ The `static-site` module puts a site behind CloudFront at
 `<name>.bylukehurst.com`: the bucket is private and readable only through the
 distribution, HTTP redirects to HTTPS, and a response headers policy sets the
 security headers. It finds the wildcard certificate in `infra/` by domain, so
-the default AWS provider must be `us-east-1`. Set `directory_index = true` for a
+the default AWS provider must be `us-east-1`. The bucket lives in the provider's
+region unless you set `region`; CloudFront is unaffected. Set `directory_index = true` for a
 site built with one HTML file per page (such as Astro's default): a CloudFront
 Function then serves `/dir/` and `/dir` as `/dir/index.html`.
 
