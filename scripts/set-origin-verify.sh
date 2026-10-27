@@ -21,12 +21,17 @@ kvs_arn=$(terraform -chdir=infra output -raw origin_verify_kvs_arn)
 etag=$(aws cloudfront-keyvaluestore describe-key-value-store --kvs-arn "$kvs_arn" --query ETag --output text)
 secret=$(openssl rand -hex 32)
 
+# The AWS CLI cannot read --cli-input-json from a pipe, so the payload goes through a
+# temporary file that only this user can read; it is removed on exit.
+payload=$(mktemp)
+trap 'rm -f "$payload"' EXIT
+
 jq -n --arg arn "$kvs_arn" --arg key "$host" --arg value "$secret" --arg etag "$etag" \
-  '{KvsARN: $arn, Key: $key, Value: $value, IfMatch: $etag}' |
-  aws cloudfront-keyvaluestore put-key --cli-input-json file:///dev/stdin >/dev/null
+  '{KvsARN: $arn, Key: $key, Value: $value, IfMatch: $etag}' >"$payload"
+aws cloudfront-keyvaluestore put-key --cli-input-json "file://$payload" >/dev/null
 
 jq -n --arg name "$parameter" --arg value "$secret" \
-  '{Name: $name, Value: $value, Type: "SecureString", Overwrite: true}' |
-  aws ssm put-parameter --cli-input-json file:///dev/stdin >/dev/null
+  '{Name: $name, Value: $value, Type: "SecureString", Overwrite: true}' >"$payload"
+aws ssm put-parameter --cli-input-json "file://$payload" >/dev/null
 
 echo "Set the origin-verify secret for ${host} in the key value store and in ${parameter}."
