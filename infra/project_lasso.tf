@@ -10,6 +10,7 @@ module "lasso_cloudfront_access" {
   project               = "lasso"
   account_id            = local.account_id
   certificate_arn       = aws_acm_certificate.wildcard.arn
+  function_names        = ["lasso-*"]
   origin_verify_kvs_arn = aws_cloudfront_key_value_store.origin_verify.arn
 }
 

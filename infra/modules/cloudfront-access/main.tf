@@ -1,5 +1,5 @@
 locals {
-  functions = "arn:aws:cloudfront::${var.account_id}:function/${var.project}-*"
+  functions = [for name in var.function_names : "arn:aws:cloudfront::${var.account_id}:function/${name}"]
 }
 
 data "aws_iam_policy_document" "read" {
@@ -31,12 +31,12 @@ data "aws_iam_policy_document" "read" {
   }
 
   dynamic "statement" {
-    for_each = var.origin_verify_kvs_arn == "" ? [] : [1]
+    for_each = length(local.functions) == 0 ? [] : [1]
 
     content {
-      sid       = "ReadOriginVerify"
+      sid       = "ReadCloudFrontFunctions"
       actions   = ["cloudfront:DescribeFunction", "cloudfront:GetFunction"]
-      resources = [local.functions]
+      resources = local.functions
     }
   }
 
@@ -81,17 +81,17 @@ data "aws_iam_policy_document" "write" {
   }
 
   dynamic "statement" {
-    for_each = var.origin_verify_kvs_arn == "" ? [] : [1]
+    for_each = length(local.functions) == 0 ? [] : [1]
 
     content {
-      sid = "ManageOriginVerifyFunctions"
+      sid = "ManageCloudFrontFunctions"
       actions = [
         "cloudfront:CreateFunction",
         "cloudfront:UpdateFunction",
         "cloudfront:PublishFunction",
         "cloudfront:DeleteFunction",
       ]
-      resources = [local.functions]
+      resources = local.functions
     }
   }
 }
