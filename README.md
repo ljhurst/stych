@@ -259,8 +259,9 @@ everything every project gets:
 - never removing the boundary
 
 A Lambda project's function, log group, parameter and resource group rules
-come from the `lambda-access` module (see `project_dio.tf`); the project file
-adds only what is specific to it. A static site serves from
+come from the `lambda-access` module (see `project_dio.tf`), and its DynamoDB
+tables from the `dynamodb-access` module (see `project_lasso.tf`); the project
+file adds only what is specific to it. A static site serves from
 `<name>.bylukehurst.com`, so its policies come from the `static-site-access`
 module (see `project_bracket_clash.tf`) instead of being written out: it grants the S3 and CloudFront access a site needs, with
 CloudFront changes limited to resources tagged `Project=<name>`.
