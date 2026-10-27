@@ -1,17 +1,18 @@
 locals {
   check = "pre-commit / pre-commit"
+  test  = "test / test"
 
   repos = {
     stych          = { private = false, required_checks = [local.check], prod_environment = false, require_pull_request = true }
-    lasso          = { private = false, required_checks = [local.check], prod_environment = true, require_pull_request = true }
+    lasso          = { private = false, required_checks = [local.check, local.test], prod_environment = true, require_pull_request = true }
     porto          = { private = true, required_checks = [], prod_environment = true, require_pull_request = true }
-    victoria       = { private = false, required_checks = [local.check], prod_environment = true, require_pull_request = true }
+    victoria       = { private = false, required_checks = [local.check, local.test], prod_environment = true, require_pull_request = true }
     train-spotting = { private = false, required_checks = [local.check], prod_environment = true, require_pull_request = true }
-    bracket-clash  = { private = false, required_checks = [local.check], prod_environment = true, require_pull_request = true }
-    fife           = { private = false, required_checks = [local.check], prod_environment = true, require_pull_request = true }
-    aboutme        = { private = false, required_checks = [local.check], prod_environment = true, require_pull_request = true }
+    bracket-clash  = { private = false, required_checks = [local.check, local.test], prod_environment = true, require_pull_request = true }
+    fife           = { private = false, required_checks = [local.check, "backend / test", "frontend / test"], prod_environment = true, require_pull_request = true }
+    aboutme        = { private = false, required_checks = [local.check, "unit-test / test"], prod_environment = true, require_pull_request = true }
     sommething     = { private = false, required_checks = [], prod_environment = false, require_pull_request = true }
-    dio            = { private = false, required_checks = [local.check], prod_environment = true, require_pull_request = true }
+    dio            = { private = false, required_checks = [local.check, local.test], prod_environment = true, require_pull_request = true }
     interview      = { private = false, required_checks = [], prod_environment = false, require_pull_request = false }
     dotfiles       = { private = false, required_checks = [], prod_environment = false, require_pull_request = false }
     iverson        = { private = false, required_checks = [local.check], prod_environment = false, require_pull_request = true }
