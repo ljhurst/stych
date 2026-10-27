@@ -98,3 +98,13 @@ output "origin_verify_kvs_arn" {
   description = "Key value store holding each Function URL site's origin-verify secret, named by hostname"
   value       = aws_cloudfront_key_value_store.origin_verify.arn
 }
+
+output "aboutme_plan_role_arn" {
+  description = "Role aboutme's PR plan jobs assume"
+  value       = module.aboutme.plan_role_arn
+}
+
+output "aboutme_apply_role_arn" {
+  description = "Role aboutme's apply job on main assumes"
+  value       = module.aboutme.apply_role_arn
+}
