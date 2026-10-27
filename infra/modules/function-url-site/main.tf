@@ -39,6 +39,12 @@ resource "aws_cloudfront_distribution" "this" {
       origin_ssl_protocols   = ["TLSv1.2"]
       origin_read_timeout    = var.origin_timeout
     }
+
+    # The Host header is the Function URL's, so services behind a trusting proxy read the public host here.
+    custom_header {
+      name  = "X-Forwarded-Host"
+      value = var.domain_name
+    }
   }
 
   default_cache_behavior {
