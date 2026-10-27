@@ -1,7 +1,6 @@
 locals {
   fife = {
-    permission_set = "arn:aws:sso:::permissionSet/ssoins-722334ffaa3b5076/ps-722345f159460a9f"
-    policies       = "arn:aws:iam::${local.account_id}:policy/fife-*"
+    policies = "arn:aws:iam::${local.account_id}:policy/fife-*"
     api = [
       "arn:aws:apigateway:${local.region}::/apis",
       "arn:aws:apigateway:${local.region}::/apis/*",
@@ -52,16 +51,6 @@ module "fife" {
   read_policy_json     = data.aws_iam_policy_document.fife_read.json
   write_policy_json    = data.aws_iam_policy_document.fife_write.json
   operate_policy_json  = data.aws_iam_policy_document.fife_operate.json
-}
-
-import {
-  to = module.fife.aws_ssoadmin_permission_set.deploy
-  id = "${local.fife.permission_set},${local.sso_instance_arn}"
-}
-
-import {
-  to = module.fife.aws_ssoadmin_account_assignment.deploy
-  id = "${local.sso_user_id},USER,${local.account_id},AWS_ACCOUNT,${local.fife.permission_set},${local.sso_instance_arn}"
 }
 
 data "aws_iam_policy_document" "fife_boundary" {
