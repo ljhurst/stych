@@ -143,6 +143,10 @@ The project's CI roles need the CloudFront and certificate permissions: add a
 `read_policy_json` and `write_policy_json` as `source_policy_documents` of the
 project's read and write policies (see `project_victoria.tf`).
 
+The origin also gets an `X-Forwarded-Host` header with the public hostname, replacing
+any value the viewer sent, for services that build their own URLs from it (Lasso's
+OIDC provider does).
+
 `origin_timeout` can't exceed the account's `Response timeout per origin`
 quota (120 seconds). The Function URL stays reachable directly: origin access
 control would make every client hash its POST bodies, which MCP clients do
