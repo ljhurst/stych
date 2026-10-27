@@ -1,3 +1,7 @@
+locals {
+  functions = [for name in var.function_names : "arn:aws:cloudfront::${var.account_id}:function/${name}"]
+}
+
 data "aws_iam_policy_document" "read" {
   statement {
     sid = "ReadDistribution"
@@ -24,6 +28,26 @@ data "aws_iam_policy_document" "read" {
     sid       = "ReadCertificate"
     actions   = ["acm:DescribeCertificate", "acm:GetCertificate", "acm:ListTagsForCertificate"]
     resources = [var.certificate_arn]
+  }
+
+  dynamic "statement" {
+    for_each = length(local.functions) == 0 ? [] : [1]
+
+    content {
+      sid       = "ReadCloudFrontFunctions"
+      actions   = ["cloudfront:DescribeFunction", "cloudfront:GetFunction"]
+      resources = local.functions
+    }
+  }
+
+  dynamic "statement" {
+    for_each = var.origin_verify_kvs_arn == "" ? [] : [1]
+
+    content {
+      sid       = "UseOriginVerifyStore"
+      actions   = ["cloudfront:DescribeKeyValueStore"]
+      resources = [var.origin_verify_kvs_arn]
+    }
   }
 }
 
@@ -53,6 +77,21 @@ data "aws_iam_policy_document" "write" {
       test     = "StringEquals"
       variable = "aws:ResourceTag/Project"
       values   = [var.project]
+    }
+  }
+
+  dynamic "statement" {
+    for_each = length(local.functions) == 0 ? [] : [1]
+
+    content {
+      sid = "ManageCloudFrontFunctions"
+      actions = [
+        "cloudfront:CreateFunction",
+        "cloudfront:UpdateFunction",
+        "cloudfront:PublishFunction",
+        "cloudfront:DeleteFunction",
+      ]
+      resources = local.functions
     }
   }
 }

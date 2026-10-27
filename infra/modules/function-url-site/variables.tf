@@ -18,3 +18,9 @@ variable "origin_timeout" {
     error_message = "origin_timeout must be between 1 and 180 seconds"
   }
 }
+
+variable "origin_verify_kvs_arn" {
+  description = "Key value store holding a secret named by this site's hostname. When set, CloudFront sends the secret as X-Origin-Verify and the viewer's address as X-Viewer-Ip, so the origin can refuse requests that did not come through it"
+  type        = string
+  default     = ""
+}

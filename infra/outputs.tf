@@ -93,3 +93,8 @@ output "certificate_validation_records" {
     }
   ])
 }
+
+output "origin_verify_kvs_arn" {
+  description = "Key value store holding each Function URL site's origin-verify secret, named by hostname"
+  value       = aws_cloudfront_key_value_store.origin_verify.arn
+}

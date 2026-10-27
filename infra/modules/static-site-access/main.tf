@@ -1,6 +1,5 @@
 locals {
-  bucket   = "arn:aws:s3:::${var.bucket_name}"
-  function = "arn:aws:cloudfront::${var.account_id}:function/${var.bucket_name}-directory-index"
+  bucket = "arn:aws:s3:::${var.bucket_name}"
 }
 
 module "cloudfront" {
@@ -9,6 +8,7 @@ module "cloudfront" {
   project         = var.project
   account_id      = var.account_id
   certificate_arn = var.certificate_arn
+  function_names  = ["${var.bucket_name}-directory-index"]
 }
 
 # The site has no workload roles; the project-access module still requires a boundary.
@@ -33,12 +33,6 @@ data "aws_iam_policy_document" "read" {
     sid       = "ReadOriginAccessControl"
     actions   = ["cloudfront:GetOriginAccessControl"]
     resources = ["*"]
-  }
-
-  statement {
-    sid       = "ReadDirectoryIndexFunction"
-    actions   = ["cloudfront:DescribeFunction", "cloudfront:GetFunction"]
-    resources = [local.function]
   }
 }
 
@@ -84,17 +78,6 @@ data "aws_iam_policy_document" "write" {
       "cloudfront:DeleteOriginAccessControl",
     ]
     resources = ["arn:aws:cloudfront::${var.account_id}:origin-access-control/*"]
-  }
-
-  statement {
-    sid = "ManageDirectoryIndexFunction"
-    actions = [
-      "cloudfront:CreateFunction",
-      "cloudfront:UpdateFunction",
-      "cloudfront:PublishFunction",
-      "cloudfront:DeleteFunction",
-    ]
-    resources = [local.function]
   }
 
   statement {
