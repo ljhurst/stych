@@ -1,0 +1,86 @@
+---
+name: Test
+
+# yamllint disable-line rule:truthy
+on:
+  workflow_call:
+    inputs:
+      command:
+        description: Command that runs the suite, from working-directory
+        type: string
+        required: true
+      working-directory:
+        description: Directory the setup and test commands run in
+        type: string
+        default: .
+      setup-command:
+        description: Command run before the tests, e.g. npm ci
+        type: string
+        default: ""
+      paths:
+        description: >-
+          Git pathspecs from the repo root, one per line. A pull request that touches none of them skips the suite;
+          pushes and empty paths always run it. Include the caller's workflow file.
+        type: string
+        default: ""
+      node-version-file:
+        type: string
+        default: ""
+      go-version-file:
+        type: string
+        default: ""
+      setup-uv:
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ inputs.working-directory }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          persist-credentials: false
+          fetch-depth: 2
+
+      - name: Check whether the suite is affected
+        id: changed
+        working-directory: .
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          PATHS: ${{ inputs.paths }}
+        run: |
+          affected=true
+          if [ "$EVENT_NAME" = pull_request ] && [ -n "$PATHS" ]; then
+            mapfile -t specs < <(printf '%s\n' "$PATHS" | sed '/^[[:space:]]*$/d')
+            if git diff --quiet HEAD^1 HEAD -- "${specs[@]}"; then
+              affected=false
+            fi
+          fi
+          echo "affected=$affected" >> "$GITHUB_OUTPUT"
+          echo "Affected: $affected"
+
+      - if: steps.changed.outputs.affected == 'true'
+        uses: ljhurst/stych/.github/actions/setup-toolchains@v1
+        with:
+          node-version-file: ${{ inputs.node-version-file }}
+          go-version-file: ${{ inputs.go-version-file }}
+          setup-uv: ${{ inputs.setup-uv }}
+
+      - name: Set up
+        if: steps.changed.outputs.affected == 'true' && inputs.setup-command != ''
+        env:
+          SETUP_COMMAND: ${{ inputs.setup-command }}
+        run: eval "$SETUP_COMMAND"
+
+      - name: Run the tests
+        if: steps.changed.outputs.affected == 'true'
+        env:
+          TEST_COMMAND: ${{ inputs.command }}
+        run: eval "$TEST_COMMAND"

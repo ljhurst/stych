@@ -205,6 +205,41 @@ The workflow caches the pre-commit environments and the tflint plugin, keyed on
 `.pre-commit-config.yaml` and `.tflint.hcl`, so `tflint --init` rarely calls
 GitHub's rate-limited API.
 
+## Testing a project
+
+`test.yml` runs one suite per call, so a repo with two suites calls it twice.
+Each call is a required-check candidate named `<job> / test`.
+
+```yaml
+jobs:
+  backend:
+    uses: ljhurst/stych/.github/workflows/test.yml@v1
+    with:
+      command: go test ./...
+      working-directory: backend
+      go-version-file: backend/go.mod
+      paths: |
+        backend/**
+        .github/workflows/check.yml
+
+  frontend:
+    uses: ljhurst/stych/.github/workflows/test.yml@v1
+    with:
+      command: npm run test
+      setup-command: npm ci
+      working-directory: frontend
+      node-version-file: frontend/.nvmrc
+      paths: |
+        frontend/**
+        .github/workflows/check.yml
+```
+
+`paths` is a list of git pathspecs from the repo root. A pull request that
+touches none of them skips the suite's steps but the job still reports success,
+so a required check never hangs. Pushes always run every suite. A trigger-level
+`on.paths` filter in the caller would leave the required check pending forever,
+so don't use one.
+
 ## Applying `infra/`
 
 `infra/` grants every other project its permissions, so it is applied from a
