@@ -1,3 +1,4 @@
+---
 name: Sync site
 description: Sync a built site to an S3 destination, deleting what the site no longer has, and report what changed
 
