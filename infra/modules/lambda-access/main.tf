@@ -5,15 +5,6 @@ locals {
   ssm_params = "arn:aws:ssm:${var.region}:${var.account_id}:parameter/${var.project}/*"
 }
 
-module "resource_groups" {
-  count  = var.resource_groups ? 1 : 0
-  source = "../resource-group-access"
-
-  project    = var.project
-  account_id = var.account_id
-  region     = var.region
-}
-
 data "aws_iam_policy_document" "boundary" {
   statement {
     sid       = "ReadParameters"
@@ -29,8 +20,6 @@ data "aws_iam_policy_document" "boundary" {
 }
 
 data "aws_iam_policy_document" "read" {
-  source_policy_documents = module.resource_groups[*].read_policy_json
-
   statement {
     sid       = "ReadFunctions"
     actions   = ["lambda:Get*", "lambda:List*"]
@@ -48,12 +37,9 @@ data "aws_iam_policy_document" "read" {
     actions   = ["logs:ListTagsForResource", "logs:ListTagsLogGroup"]
     resources = [local.log_group, "${local.log_group}:*"]
   }
-
 }
 
 data "aws_iam_policy_document" "write" {
-  source_policy_documents = module.resource_groups[*].write_policy_json
-
   statement {
     sid       = "ManageFunctions"
     actions   = ["lambda:*"]

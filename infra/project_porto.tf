@@ -13,6 +13,14 @@ module "porto_cloudfront_access" {
   certificate_arn = aws_acm_certificate.wildcard.arn
 }
 
+module "porto_resource_groups" {
+  source = "./modules/resource-group-access"
+
+  project    = "porto"
+  account_id = local.account_id
+  region     = local.region
+}
+
 module "porto_lambda_access" {
   source = "./modules/lambda-access"
 
@@ -59,7 +67,7 @@ data "aws_iam_policy_document" "porto_boundary" {
 }
 
 data "aws_iam_policy_document" "porto_read" {
-  source_policy_documents = [module.porto_cloudfront_access.read_policy_json, module.porto_lambda_access.read_policy_json, module.porto_dynamodb_access.read_policy_json]
+  source_policy_documents = [module.porto_cloudfront_access.read_policy_json, module.porto_lambda_access.read_policy_json, module.porto_resource_groups.read_policy_json, module.porto_dynamodb_access.read_policy_json]
 
   statement {
     sid       = "ReadAdapterLayer"
@@ -69,7 +77,7 @@ data "aws_iam_policy_document" "porto_read" {
 }
 
 data "aws_iam_policy_document" "porto_write" {
-  source_policy_documents = [module.porto_cloudfront_access.write_policy_json, module.porto_lambda_access.write_policy_json, module.porto_dynamodb_access.write_policy_json]
+  source_policy_documents = [module.porto_cloudfront_access.write_policy_json, module.porto_lambda_access.write_policy_json, module.porto_resource_groups.write_policy_json, module.porto_dynamodb_access.write_policy_json]
 }
 
 data "aws_iam_policy_document" "porto_operate" {

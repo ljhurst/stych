@@ -19,6 +19,14 @@ module "victoria_cloudfront_access" {
   certificate_arn = aws_acm_certificate.wildcard.arn
 }
 
+module "victoria_resource_groups" {
+  source = "./modules/resource-group-access"
+
+  project    = "victoria"
+  account_id = local.account_id
+  region     = local.region
+}
+
 module "victoria_lambda_access" {
   source = "./modules/lambda-access"
 
@@ -63,7 +71,7 @@ data "aws_iam_policy_document" "victoria_boundary" {
 }
 
 data "aws_iam_policy_document" "victoria_read" {
-  source_policy_documents = [module.victoria_cloudfront_access.read_policy_json, module.victoria_lambda_access.read_policy_json]
+  source_policy_documents = [module.victoria_cloudfront_access.read_policy_json, module.victoria_lambda_access.read_policy_json, module.victoria_resource_groups.read_policy_json]
 
   statement {
     sid       = "ReadWikiBucket"
@@ -80,7 +88,7 @@ data "aws_iam_policy_document" "victoria_read" {
 }
 
 data "aws_iam_policy_document" "victoria_write" {
-  source_policy_documents = [module.victoria_cloudfront_access.write_policy_json, module.victoria_lambda_access.write_policy_json]
+  source_policy_documents = [module.victoria_cloudfront_access.write_policy_json, module.victoria_lambda_access.write_policy_json, module.victoria_resource_groups.write_policy_json]
 
   statement {
     sid       = "ManageWikiBucket"

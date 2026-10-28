@@ -326,16 +326,14 @@ everything every project gets:
 - creating or changing them only with the boundary attached
 - never removing the boundary
 
-A Lambda project's function, log group, parameter and resource group rules
-come from the `lambda-access` module (see `project_dio.tf`), and its DynamoDB
-tables from the `dynamodb-access` module (see `project_lasso.tf`); the project
-file adds only what is specific to it. A static site serves from
+A Lambda project's function, log group and parameter rules come from the
+`lambda-access` module (see `project_dio.tf`), its DynamoDB tables from the
+`dynamodb-access` module and its `<name>-*` resource groups from the
+`resource-group-access` module (see `project_lasso.tf`); the project file adds
+only what is specific to it. A static site serves from
 `<name>.bylukehurst.com`, so its policies come from the `static-site-access`
 module (see `project_bracket_clash.tf`) instead of being written out: it grants the S3 and CloudFront access a site needs, with
-CloudFront changes limited to resources tagged `Project=<name>`. A site that
-wants a resource group adds the `resource-group-access` module for the
-`<name>-*` group permissions (see `project_train_spotting.tf`).
-
+CloudFront changes limited to resources tagged `Project=<name>`.
 ## Releasing
 
 Callers pin `@v1`, and the workflows reference
