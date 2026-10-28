@@ -108,3 +108,13 @@ output "aboutme_apply_role_arn" {
   description = "Role aboutme's apply job on main assumes"
   value       = module.aboutme.apply_role_arn
 }
+
+output "preview_certificate_validation_records" {
+  description = "DNS records that validate the preview certificate. Add them in Cloudflare as DNS only and keep them: ACM renews through them"
+  value       = module.site_previews.certificate_validation_records
+}
+
+output "preview_cname_target" {
+  description = "Hostname the DNS-only wildcard record *.preview.bylukehurst.com points at"
+  value       = module.site_previews.cname_target
+}
