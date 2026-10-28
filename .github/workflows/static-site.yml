@@ -136,7 +136,7 @@ jobs:
           gh api -X POST "repos/$GITHUB_REPOSITORY/deployments/$id/statuses" -f state=in_progress > /dev/null
 
       - id: sync
-        uses: ljhurst/stych/.github/actions/sync-site@feat/site-preview-workflow
+        uses: ljhurst/stych/.github/actions/sync-site@v1
         with:
           site-dir: ${{ inputs.site-dir }}
           destination: ${{ env.PREVIEW_PREFIX }}
@@ -204,7 +204,7 @@ jobs:
 
       - id: diff
         name: Preview the production deploy
-        uses: ljhurst/stych/.github/actions/sync-site@feat/site-preview-workflow
+        uses: ljhurst/stych/.github/actions/sync-site@v1
         with:
           site-dir: ${{ inputs.site-dir }}
           destination: s3://${{ inputs.bucket }}
@@ -290,7 +290,7 @@ jobs:
           role-session-name: stych-site-deploy-${{ github.run_id }}
           aws-region: ${{ inputs.aws-region }}
 
-      - uses: ljhurst/stych/.github/actions/sync-site@feat/site-preview-workflow
+      - uses: ljhurst/stych/.github/actions/sync-site@v1
         with:
           site-dir: ${{ inputs.site-dir }}
           destination: s3://${{ inputs.bucket }}
