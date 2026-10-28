@@ -121,6 +121,33 @@ Pin a `vX.Y.Z` release, not `v1`: `v1` moves. After the apply, add a DNS-only
 the `distribution_id` output to the `site` job so each deploy invalidates the
 cache.
 
+## Pull request previews
+
+`infra/previews.tf` creates one bucket (`lj-previews`) and one CloudFront
+distribution for every static site's pull request previews. A preview of PR 12
+on `bracket-clash` is served at
+`https://bracket-clash-pr-12.preview.bylukehurst.com/`, from
+`lj-previews/bracket-clash/pr-12/`. A CloudFront Function maps the hostname to
+that prefix, so absolute asset URLs work. The same function adds the project's
+`Content-Security-Policy` to every response, read from a key value store
+named after the project, so a preview fails on the CSP the way production
+would. Objects expire after 14 days.
+
+A project opts in by passing `previews = module.site_previews.access` to
+`static-site-access` and its `preview_policy_json` output to `project-access`
+as `plan_policy_jsons` (see `project_bracket_clash.tf`). Its plan role can then
+write only `lj-previews/<project>/*`, plus keys in the policy store (IAM can't scope a key value store per key).
+
+The first apply needs two steps, like the wildcard certificate, and two
+DNS-only records in Cloudflare:
+
+1. `terraform -chdir=infra apply -target=module.site_previews.aws_acm_certificate.this`
+2. Add the records from `terraform -chdir=infra output
+   preview_certificate_validation_records` in Cloudflare as DNS only. Keep them.
+3. Run the full apply.
+4. Add a DNS-only `CNAME *.preview` in Cloudflare pointing at the
+   `preview_cname_target` output.
+
 ## Fronting a Lambda Function URL
 
 A Function URL has no custom domain of its own. The `function-url-site` module

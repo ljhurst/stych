@@ -52,3 +52,9 @@ variable "operate_policy_json" {
   description = "Local-only access beyond deploying, such as data and secrets"
   type        = string
 }
+
+variable "plan_policy_jsons" {
+  description = "Extra policies for the plan role beyond read, by name; each is created as <name>-deploy-<key> and attached to the plan role, e.g. preview for deploying pull request previews"
+  type        = map(string)
+  default     = {}
+}

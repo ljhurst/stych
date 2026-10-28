@@ -90,6 +90,34 @@ data "aws_iam_policy_document" "write" {
   }
 }
 
+data "aws_iam_policy_document" "preview" {
+  count = var.previews == null ? 0 : 1
+
+  statement {
+    sid       = "ListPreviews"
+    actions   = ["s3:ListBucket"]
+    resources = ["arn:aws:s3:::${var.previews.bucket}"]
+
+    condition {
+      test     = "StringLike"
+      variable = "s3:prefix"
+      values   = ["${var.project}/*"]
+    }
+  }
+
+  statement {
+    sid       = "DeployPreviews"
+    actions   = ["s3:GetObject", "s3:PutObject", "s3:DeleteObject"]
+    resources = ["arn:aws:s3:::${var.previews.bucket}/${var.project}/*"]
+  }
+
+  statement {
+    sid       = "PublishPreviewPolicy"
+    actions   = ["cloudfront-keyvaluestore:DescribeKeyValueStore", "cloudfront-keyvaluestore:PutKey"]
+    resources = [var.previews.kvs_arn]
+  }
+}
+
 data "aws_iam_policy_document" "operate" {
   statement {
     sid       = "ListSite"

@@ -5,6 +5,8 @@ module "bracket_clash_access" {
   bucket_name     = "lj-bracket-clash"
   account_id      = local.account_id
   certificate_arn = aws_acm_certificate.wildcard.arn
+
+  previews = module.site_previews.access
 }
 
 module "bracket_clash_resource_groups" {
@@ -30,6 +32,7 @@ module "bracket_clash" {
   read_policy_json     = data.aws_iam_policy_document.bracket_clash_read.json
   write_policy_json    = data.aws_iam_policy_document.bracket_clash_write.json
   operate_policy_json  = module.bracket_clash_access.operate_policy_json
+  plan_policy_jsons    = { preview = module.bracket_clash_access.preview_policy_json }
 }
 
 data "aws_iam_policy_document" "bracket_clash_read" {

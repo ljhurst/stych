@@ -15,3 +15,8 @@ jobs:
     uses: ./.github/workflows/pre-commit.yml
     with:
       terraform-version: "1.17.0"
+
+  test:
+    uses: ./.github/workflows/test.yml
+    with:
+      command: node --test

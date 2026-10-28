@@ -1,10 +1,13 @@
 locals {
-  policies = {
-    boundary = var.boundary_policy_json
-    read     = data.aws_iam_policy_document.read.json
-    write    = data.aws_iam_policy_document.write.json
-    operate  = var.operate_policy_json
-  }
+  policies = merge(
+    {
+      boundary = var.boundary_policy_json
+      read     = data.aws_iam_policy_document.read.json
+      write    = data.aws_iam_policy_document.write.json
+      operate  = var.operate_policy_json
+    },
+    var.plan_policy_jsons,
+  )
 
   roles        = "arn:aws:iam::${var.account_id}:role/${var.name}-*"
   state_key    = "${var.state_bucket_arn}/${var.name}/terraform.tfstate"
@@ -13,7 +16,7 @@ locals {
   # The deploy policy (read + write) is shared by people and CI so the two
   # can't drift; operate is only for people.
   role_policies = {
-    plan  = ["read"]
+    plan  = concat(["read"], keys(var.plan_policy_jsons))
     apply = ["read", "write"]
   }
   permission_set_policies = ["read", "write", "operate"]

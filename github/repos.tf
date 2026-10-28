@@ -3,7 +3,7 @@ locals {
   test  = "test / test"
 
   repos = {
-    stych          = { private = false, required_checks = [local.check], prod_environment = false, require_pull_request = true }
+    stych          = { private = false, required_checks = [local.check, local.test], prod_environment = false, require_pull_request = true }
     lasso          = { private = false, required_checks = [local.check, local.test], prod_environment = true, require_pull_request = true }
     porto          = { private = true, required_checks = [], prod_environment = true, require_pull_request = true }
     victoria       = { private = false, required_checks = [local.check, local.test], prod_environment = true, require_pull_request = true }

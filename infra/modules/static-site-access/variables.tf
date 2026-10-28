@@ -17,3 +17,12 @@ variable "certificate_arn" {
   description = "Wildcard certificate the project's distributions use"
   type        = string
 }
+
+variable "previews" {
+  description = "Preview bucket and policy store from the site-previews module; set it to let the project's plan role deploy previews under <project>/ and store its content security policy"
+  type = object({
+    bucket  = string
+    kvs_arn = string
+  })
+  default = null
+}
