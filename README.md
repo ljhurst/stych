@@ -138,6 +138,17 @@ A project opts in by passing `previews = module.site_previews.access` to
 as `plan_policy_jsons` (see `project_bracket_clash.tf`). Its plan role can then
 write only `lj-previews/<project>/*`, plus keys in the policy store (IAM can't scope a key value store per key).
 
+`static-site.yml` does the rest on every PR from the same repository: it syncs
+the built site to the preview prefix, copies the production distribution's
+`Content-Security-Policy` into the policy store (when `distribution-id` is
+set), waits for the preview to answer 200 on `smoke-path`, records a GitHub
+deployment in the `preview` environment so the PR shows "View deployment", and
+comments the URL above the usual diff of what merging would deploy. Callers
+give the `site` job `deployments: write` and add `preview-cleanup.yml`
+(see `bracket-clash/.github/workflows/preview-cleanup.yml`), which deletes the
+prefix and retires the deployments when the PR closes. Sync logic lives once,
+in `.github/actions/sync-site`, shared by the preview and the production deploy.
+
 The first apply needs two steps, like the wildcard certificate, and two
 DNS-only records in Cloudflare:
 

@@ -1,0 +1,54 @@
+---
+name: Sync site
+description: Sync a built site to an S3 destination, deleting what the site no longer has, and report what changed
+
+inputs:
+  site-dir:
+    description: Directory synced to the destination
+    required: true
+  destination:
+    description: S3 URI the site is synced to, e.g. s3://bucket or s3://bucket/prefix/
+    required: true
+  dry-run:
+    description: Report what would change without changing anything
+    default: "false"
+
+outputs:
+  uploaded:
+    description: Number of objects uploaded
+    value: ${{ steps.sync.outputs.uploaded }}
+  deleted:
+    description: Number of objects deleted
+    value: ${{ steps.sync.outputs.deleted }}
+  log:
+    description: Path of the file holding the sync output
+    value: ${{ steps.sync.outputs.log }}
+
+runs:
+  using: composite
+  steps:
+    - id: sync
+      shell: bash
+      env:
+        SITE_DIR: ${{ inputs.site-dir }}
+        DESTINATION: ${{ inputs.destination }}
+        DRY_RUN: ${{ inputs.dry-run }}
+      run: |
+        flags=(--delete --no-progress)
+        [ "$DRY_RUN" = true ] && flags+=(--dryrun)
+        log=$(mktemp "$RUNNER_TEMP/sync.XXXXXX")
+        aws s3 sync "$SITE_DIR" "$DESTINATION" "${flags[@]}" | tee "$log"
+        uploaded=$(grep -cE '^(\(dryrun\) )?upload:' "$log" || true)
+        deleted=$(grep -cE '^(\(dryrun\) )?delete:' "$log" || true)
+        {
+          echo "uploaded=$uploaded"
+          echo "deleted=$deleted"
+          echo "log=$log"
+        } >> "$GITHUB_OUTPUT"
+        if [ "$DRY_RUN" != true ]; then
+          {
+            echo "### Site sync to \`$DESTINATION\`"
+            echo
+            echo "**$uploaded uploaded, $deleted deleted.**"
+          } >> "$GITHUB_STEP_SUMMARY"
+        fi

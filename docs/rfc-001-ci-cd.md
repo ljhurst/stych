@@ -31,7 +31,7 @@ read state.
 | Piece | What it is |
 |---|---|
 | `.github/workflows/terraform.yml` | Reusable (`workflow_call`). Inputs: plan and apply role ARNs, infra directory, build command, Node version file, Terraform version. On a PR: builds, plans, and keeps one plan comment up to date. On the default branch: builds, plans and applies in the `prod` environment. One `concurrency` group per PR for plans, per repo for applies. |
-| `.github/workflows/static-site.yml` | Reusable. Builds the site once and uploads it as an artifact. On a PR: previews `aws s3 sync --delete --dryrun` as the plan role and keeps one comment up to date. On the default branch: syncs that same artifact as the apply role in `prod`, then optionally invalidates CloudFront. |
+| `.github/workflows/static-site.yml` | Reusable. Builds the site once and uploads it as an artifact. On a PR: deploys a preview to `<repo>-pr-<n>.preview.bylukehurst.com` as the plan role, smoke-tests it, records a GitHub deployment and keeps one comment up to date with the production sync diff. On the default branch: syncs that same artifact as the apply role in `prod`, then optionally invalidates CloudFront. |
 | `.github/workflows/pre-commit.yml` | Reusable. Runs a repo's own pre-commit hooks on every file, so CI and local checks can't drift. Toolchains, including Terraform, are opt-in inputs. |
 | `.github/actions/setup-toolchains` | Composite action every workflow uses to install only the Node, Go, uv or Terraform a project asks for. |
 | `infra/` foundation | The state bucket `lj-tf-state` (versioning, encryption, old-version expiry, TLS-only policy) and the GitHub OIDC provider. Both imported, both `prevent_destroy`. |
