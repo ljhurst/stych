@@ -8,6 +8,14 @@ locals {
   }
 }
 
+module "aboutme_resource_groups" {
+  source = "./modules/resource-group-access"
+
+  project    = "aboutme"
+  account_id = local.account_id
+  region     = local.region
+}
+
 module "aboutme_lambda_access" {
   source = "./modules/lambda-access"
 
@@ -44,7 +52,7 @@ module "aboutme" {
 }
 
 data "aws_iam_policy_document" "aboutme_read" {
-  source_policy_documents = [module.aboutme_site_access.read_policy_json, module.aboutme_lambda_access.read_policy_json]
+  source_policy_documents = [module.aboutme_site_access.read_policy_json, module.aboutme_lambda_access.read_policy_json, module.aboutme_resource_groups.read_policy_json]
 
   statement {
     sid       = "ReadApi"
@@ -54,7 +62,7 @@ data "aws_iam_policy_document" "aboutme_read" {
 }
 
 data "aws_iam_policy_document" "aboutme_write" {
-  source_policy_documents = [module.aboutme_site_access.write_policy_json, module.aboutme_lambda_access.write_policy_json]
+  source_policy_documents = [module.aboutme_site_access.write_policy_json, module.aboutme_lambda_access.write_policy_json, module.aboutme_resource_groups.write_policy_json]
 
   statement {
     sid       = "ManageApi"

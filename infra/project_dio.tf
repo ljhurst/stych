@@ -5,6 +5,14 @@ locals {
   }
 }
 
+module "dio_resource_groups" {
+  source = "./modules/resource-group-access"
+
+  project    = "dio"
+  account_id = local.account_id
+  region     = local.region
+}
+
 module "dio_lambda_access" {
   source = "./modules/lambda-access"
 
@@ -42,7 +50,7 @@ data "aws_iam_policy_document" "dio_boundary" {
 }
 
 data "aws_iam_policy_document" "dio_read" {
-  source_policy_documents = [module.dio_lambda_access.read_policy_json]
+  source_policy_documents = [module.dio_lambda_access.read_policy_json, module.dio_resource_groups.read_policy_json]
 
   statement {
     sid       = "ReadVercelProvider"
@@ -53,7 +61,7 @@ data "aws_iam_policy_document" "dio_read" {
 }
 
 data "aws_iam_policy_document" "dio_write" {
-  source_policy_documents = [module.dio_lambda_access.write_policy_json]
+  source_policy_documents = [module.dio_lambda_access.write_policy_json, module.dio_resource_groups.write_policy_json]
 
   statement {
     sid = "ManageVercelProvider"
