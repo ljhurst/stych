@@ -17,17 +17,25 @@ const sandbox = {
     }),
   },
 };
-const source = fs.readFileSync(path.join(__dirname, 'router.js'), 'utf8').replace(/^import .*\n/m, '');
+const source = fs
+  .readFileSync(path.join(__dirname, 'router.js'), 'utf8')
+  .replace(/^import .*\n/m, '');
 vm.runInNewContext(source, sandbox);
 
 const host = (label) => `${label}.preview.bylukehurst.com`;
 
 test('maps a preview host to the project and pull request prefix', () => {
-  assert.equal(sandbox.route(host('bracket-clash-pr-12'), '/assets/app.js'), '/bracket-clash/pr-12/assets/app.js');
+  assert.equal(
+    sandbox.route(host('bracket-clash-pr-12'), '/assets/app.js'),
+    '/bracket-clash/pr-12/assets/app.js',
+  );
 });
 
 test('keeps hyphens in the project name', () => {
-  assert.equal(sandbox.route(host('train-spotting-pr-3'), '/style.css'), '/train-spotting/pr-3/style.css');
+  assert.equal(
+    sandbox.route(host('train-spotting-pr-3'), '/style.css'),
+    '/train-spotting/pr-3/style.css',
+  );
 });
 
 test('serves index.html for the root and for directories', () => {
