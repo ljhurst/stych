@@ -9,6 +9,14 @@ locals {
   }
 }
 
+module "fife_resource_groups" {
+  source = "./modules/resource-group-access"
+
+  project    = "fife"
+  account_id = local.account_id
+  region     = local.region
+}
+
 module "fife_lambda_access" {
   source = "./modules/lambda-access"
 
@@ -57,7 +65,7 @@ data "aws_iam_policy_document" "fife_boundary" {
 }
 
 data "aws_iam_policy_document" "fife_read" {
-  source_policy_documents = [module.fife_site_access.read_policy_json, module.fife_lambda_access.read_policy_json, module.fife_dynamodb_access.read_policy_json]
+  source_policy_documents = [module.fife_site_access.read_policy_json, module.fife_lambda_access.read_policy_json, module.fife_resource_groups.read_policy_json, module.fife_dynamodb_access.read_policy_json]
 
   statement {
     sid       = "ReadApi"
@@ -73,7 +81,7 @@ data "aws_iam_policy_document" "fife_read" {
 }
 
 data "aws_iam_policy_document" "fife_write" {
-  source_policy_documents = [module.fife_site_access.write_policy_json, module.fife_lambda_access.write_policy_json, module.fife_dynamodb_access.write_policy_json]
+  source_policy_documents = [module.fife_site_access.write_policy_json, module.fife_lambda_access.write_policy_json, module.fife_resource_groups.write_policy_json, module.fife_dynamodb_access.write_policy_json]
 
   statement {
     sid       = "ManageApi"
