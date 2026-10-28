@@ -117,7 +117,7 @@ resource "aws_cloudfront_response_headers_policy" "this" {
 
 resource "aws_cloudfront_key_value_store" "this" {
   name    = var.bucket_name
-  comment = "Content-Security-Policy each project's previews are served with, named by project; the site workflow writes them from the project's production policy"
+  comment = "Content-Security-Policy for each project's previews, by project name; the site workflow writes them"
 }
 
 resource "aws_cloudfront_function" "router" {
