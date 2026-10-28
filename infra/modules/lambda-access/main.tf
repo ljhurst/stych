@@ -2,8 +2,16 @@ locals {
   functions  = "arn:aws:lambda:${var.region}:${var.account_id}:function:${var.function_pattern}"
   log_group  = "arn:aws:logs:${var.region}:${var.account_id}:log-group:/aws/lambda/${var.function_pattern}"
   roles      = "arn:aws:iam::${var.account_id}:role/${var.project}-*"
-  groups     = "arn:aws:resource-groups:${var.region}:${var.account_id}:group/${var.project}-*"
   ssm_params = "arn:aws:ssm:${var.region}:${var.account_id}:parameter/${var.project}/*"
+}
+
+module "resource_groups" {
+  count  = var.resource_groups ? 1 : 0
+  source = "../resource-group-access"
+
+  project    = var.project
+  account_id = var.account_id
+  region     = var.region
 }
 
 data "aws_iam_policy_document" "boundary" {
@@ -21,6 +29,8 @@ data "aws_iam_policy_document" "boundary" {
 }
 
 data "aws_iam_policy_document" "read" {
+  source_policy_documents = module.resource_groups[*].read_policy_json
+
   statement {
     sid       = "ReadFunctions"
     actions   = ["lambda:Get*", "lambda:List*"]
@@ -39,18 +49,11 @@ data "aws_iam_policy_document" "read" {
     resources = [local.log_group, "${local.log_group}:*"]
   }
 
-  dynamic "statement" {
-    for_each = var.resource_groups ? [1] : []
-
-    content {
-      sid       = "ReadResourceGroups"
-      actions   = ["resource-groups:Get*", "resource-groups:List*"]
-      resources = [local.groups]
-    }
-  }
 }
 
 data "aws_iam_policy_document" "write" {
+  source_policy_documents = module.resource_groups[*].write_policy_json
+
   statement {
     sid       = "ManageFunctions"
     actions   = ["lambda:*"]
@@ -61,16 +64,6 @@ data "aws_iam_policy_document" "write" {
     sid       = "ManageLogGroups"
     actions   = ["logs:*"]
     resources = [local.log_group, "${local.log_group}:*"]
-  }
-
-  dynamic "statement" {
-    for_each = var.resource_groups ? [1] : []
-
-    content {
-      sid       = "ManageResourceGroups"
-      actions   = ["resource-groups:*"]
-      resources = [local.groups]
-    }
   }
 
   statement {

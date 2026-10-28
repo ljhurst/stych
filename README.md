@@ -332,7 +332,9 @@ tables from the `dynamodb-access` module (see `project_lasso.tf`); the project
 file adds only what is specific to it. A static site serves from
 `<name>.bylukehurst.com`, so its policies come from the `static-site-access`
 module (see `project_bracket_clash.tf`) instead of being written out: it grants the S3 and CloudFront access a site needs, with
-CloudFront changes limited to resources tagged `Project=<name>`.
+CloudFront changes limited to resources tagged `Project=<name>`. A site that
+wants a resource group adds the `resource-group-access` module for the
+`<name>-*` group permissions (see `project_train_spotting.tf`).
 
 ## Releasing
 

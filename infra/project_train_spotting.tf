@@ -7,6 +7,14 @@ module "train_spotting_access" {
   certificate_arn = aws_acm_certificate.wildcard.arn
 }
 
+module "train_spotting_resource_groups" {
+  source = "./modules/resource-group-access"
+
+  project    = "train-spotting"
+  account_id = local.account_id
+  region     = local.region
+}
+
 module "train_spotting" {
   source = "./modules/project-access"
 
@@ -19,7 +27,15 @@ module "train_spotting" {
   state_bucket_arn      = aws_s3_bucket.state.arn
 
   boundary_policy_json = module.train_spotting_access.boundary_policy_json
-  read_policy_json     = module.train_spotting_access.read_policy_json
-  write_policy_json    = module.train_spotting_access.write_policy_json
+  read_policy_json     = data.aws_iam_policy_document.train_spotting_read.json
+  write_policy_json    = data.aws_iam_policy_document.train_spotting_write.json
   operate_policy_json  = module.train_spotting_access.operate_policy_json
+}
+
+data "aws_iam_policy_document" "train_spotting_read" {
+  source_policy_documents = [module.train_spotting_access.read_policy_json, module.train_spotting_resource_groups.read_policy_json]
+}
+
+data "aws_iam_policy_document" "train_spotting_write" {
+  source_policy_documents = [module.train_spotting_access.write_policy_json, module.train_spotting_resource_groups.write_policy_json]
 }
