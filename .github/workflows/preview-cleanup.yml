@@ -45,7 +45,7 @@ jobs:
           aws-region: ${{ inputs.aws-region }}
 
       - name: Delete the preview
-        run: aws s3 rm "s3://$PREVIEW_BUCKET/$REPO_NAME/pr-$PR/" --recursive --no-progress
+        run: aws s3 rm "s3://$PREVIEW_BUCKET/$REPO_NAME/pr-$PR/" --recursive
 
       - name: Retire the deployments
         run: |
