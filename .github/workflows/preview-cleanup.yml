@@ -1,0 +1,54 @@
+---
+name: Preview cleanup
+
+# yamllint disable-line rule:truthy
+on:
+  workflow_call:
+    inputs:
+      plan-role-arn:
+        description: Role the pull request previews were deployed with
+        type: string
+        required: true
+      preview-bucket:
+        description: Bucket pull request previews are deployed to, under <repo>/pr-<number>/
+        type: string
+        default: lj-previews
+      aws-region:
+        type: string
+        default: us-east-1
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  cleanup:
+    # Fork PRs never had a preview.
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+      deployments: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      PR: ${{ github.event.pull_request.number }}
+      REPO_NAME: ${{ github.event.repository.name }}
+      PREVIEW_BUCKET: ${{ inputs.preview-bucket }}
+    steps:
+      - uses: aws-actions/configure-aws-credentials@e1253824e5c10ff9df46874f81ed3ec929e19cfd  # v6.3.0
+        with:
+          role-to-assume: ${{ inputs.plan-role-arn }}
+          role-session-name: stych-preview-cleanup-${{ github.run_id }}
+          aws-region: ${{ inputs.aws-region }}
+
+      - name: Delete the preview
+        run: aws s3 rm "s3://$PREVIEW_BUCKET/$REPO_NAME/pr-$PR/" --recursive --no-progress
+
+      - name: Retire the deployments
+        run: |
+          for id in $(gh api "repos/$GITHUB_REPOSITORY/deployments?environment=preview&task=pr-$PR" --jq '.[].id'); do
+            gh api -X POST "repos/$GITHUB_REPOSITORY/deployments/$id/statuses" -f state=inactive > /dev/null
+          done
