@@ -15,7 +15,6 @@ module "aboutme_lambda_access" {
   account_id       = local.account_id
   region           = local.region
   function_pattern = "lj-aboutme-*"
-  resource_groups  = false
 }
 
 module "aboutme_site_access" {

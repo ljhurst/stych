@@ -16,7 +16,6 @@ module "fife_lambda_access" {
   account_id       = local.account_id
   region           = local.region
   function_pattern = "fife-*"
-  resource_groups  = false
 }
 
 module "fife_site_access" {

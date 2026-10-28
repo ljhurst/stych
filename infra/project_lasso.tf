@@ -14,6 +14,14 @@ module "lasso_cloudfront_access" {
   origin_verify_kvs_arn = aws_cloudfront_key_value_store.origin_verify.arn
 }
 
+module "lasso_resource_groups" {
+  source = "./modules/resource-group-access"
+
+  project    = "lasso"
+  account_id = local.account_id
+  region     = local.region
+}
+
 module "lasso_lambda_access" {
   source = "./modules/lambda-access"
 
@@ -54,7 +62,7 @@ data "aws_iam_policy_document" "lasso_boundary" {
 }
 
 data "aws_iam_policy_document" "lasso_read" {
-  source_policy_documents = [module.lasso_cloudfront_access.read_policy_json, module.lasso_lambda_access.read_policy_json, module.lasso_dynamodb_access.read_policy_json]
+  source_policy_documents = [module.lasso_cloudfront_access.read_policy_json, module.lasso_lambda_access.read_policy_json, module.lasso_resource_groups.read_policy_json, module.lasso_dynamodb_access.read_policy_json]
 
   statement {
     sid       = "ReadAdapterLayer"
@@ -64,7 +72,7 @@ data "aws_iam_policy_document" "lasso_read" {
 }
 
 data "aws_iam_policy_document" "lasso_write" {
-  source_policy_documents = [module.lasso_cloudfront_access.write_policy_json, module.lasso_lambda_access.write_policy_json, module.lasso_dynamodb_access.write_policy_json]
+  source_policy_documents = [module.lasso_cloudfront_access.write_policy_json, module.lasso_lambda_access.write_policy_json, module.lasso_resource_groups.write_policy_json, module.lasso_dynamodb_access.write_policy_json]
 }
 
 data "aws_iam_policy_document" "lasso_operate" {

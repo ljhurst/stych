@@ -4,12 +4,12 @@ output "boundary_policy_json" {
 }
 
 output "read_policy_json" {
-  description = "Reads a Terraform plan needs for functions, log groups and resource groups"
+  description = "Reads a Terraform plan needs for functions and log groups"
   value       = data.aws_iam_policy_document.read.json
 }
 
 output "write_policy_json" {
-  description = "Writes a Terraform apply needs for functions, log groups and resource groups"
+  description = "Writes a Terraform apply needs for functions and log groups"
   value       = data.aws_iam_policy_document.write.json
 }
 

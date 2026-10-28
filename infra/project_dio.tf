@@ -12,7 +12,6 @@ module "dio_lambda_access" {
   account_id       = local.account_id
   region           = local.region
   function_pattern = "lj-dio-*"
-  resource_groups  = false
 }
 
 module "dio" {

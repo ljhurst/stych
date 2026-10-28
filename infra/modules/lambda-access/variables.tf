@@ -1,5 +1,5 @@
 variable "project" {
-  description = "Project name; its roles are <project>-*, its parameters /<project>/* and its resource groups <project>-*"
+  description = "Project name; its roles are <project>-*, its parameters /<project>/*"
   type        = string
 }
 
@@ -16,10 +16,4 @@ variable "region" {
 variable "function_pattern" {
   description = "Name pattern of the project's Lambda functions, e.g. lj-dio-*; their log groups are /aws/lambda/<pattern>"
   type        = string
-}
-
-variable "resource_groups" {
-  description = "Whether the project has resource groups to read and manage"
-  type        = bool
-  default     = true
 }
