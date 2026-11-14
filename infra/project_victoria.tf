@@ -68,6 +68,18 @@ data "aws_iam_policy_document" "victoria_boundary" {
     resources = ["${local.victoria.wiki_bucket}/*"]
   }
 
+  statement {
+    sid       = "AnthropicIdentityToken"
+    actions   = ["sts:GetWebIdentityToken"]
+    resources = ["*"]
+
+    condition {
+      test     = "ForAllValues:StringEquals"
+      variable = "sts:IdentityTokenAudience"
+      values   = ["https://api.anthropic.com"]
+    }
+  }
+
 }
 
 data "aws_iam_policy_document" "victoria_read" {

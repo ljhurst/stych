@@ -118,3 +118,8 @@ output "preview_cname_target" {
   description = "Hostname the DNS-only wildcard record *.preview.bylukehurst.com points at"
   value       = module.site_previews.cname_target
 }
+
+output "outbound_identity_issuer" {
+  description = "Issuer URL of the JWTs this account's roles mint with sts:GetWebIdentityToken. Register it with the external service"
+  value       = aws_iam_outbound_web_identity_federation.this.issuer_identifier
+}
