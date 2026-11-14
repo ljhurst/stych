@@ -1,9 +1,3 @@
-locals {
-  freal = {
-    espn_params = "arn:aws:ssm:${local.region}:${local.account_id}:parameter/freal/espn/*"
-  }
-}
-
 module "freal_access" {
   source = "./modules/static-site-access"
 
@@ -22,6 +16,8 @@ module "freal_lambda_access" {
   account_id       = local.account_id
   region           = local.region
   function_pattern = "lj-freal-*"
+
+  writable_parameters = ["espn/*"]
 }
 
 module "freal_resource_groups" {
@@ -52,12 +48,6 @@ module "freal" {
 
 data "aws_iam_policy_document" "freal_boundary" {
   source_policy_documents = [module.freal_access.boundary_policy_json, module.freal_lambda_access.boundary_policy_json]
-
-  statement {
-    sid       = "WriteEspnCredentials"
-    actions   = ["ssm:PutParameter"]
-    resources = [local.freal.espn_params]
-  }
 }
 
 data "aws_iam_policy_document" "freal_read" {

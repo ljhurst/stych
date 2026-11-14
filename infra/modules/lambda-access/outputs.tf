@@ -1,5 +1,5 @@
 output "boundary_policy_json" {
-  description = "Reads parameters and writes logs; the project adds what its own roles need"
+  description = "Reads parameters, writes logs and writes the parameters the project lists; the project adds what its own roles need"
   value       = data.aws_iam_policy_document.boundary.json
 }
 
