@@ -214,6 +214,16 @@ control would make every client hash its POST bodies, which MCP clients do
 not, so the service must authenticate requests itself. After the apply, add a
 DNS-only `CNAME <name>` in Cloudflare pointing at the `cname_target` output.
 
+## Calling external services without keys
+
+The account has outbound web identity federation on, so a role can call
+`sts:GetWebIdentityToken` for an AWS-signed JWT and exchange it with a service
+that trusts the account's issuer (the `outbound_identity_issuer` output), in
+place of a stored API key. To let a project's role do it, add a statement to
+its boundary granting `sts:GetWebIdentityToken` with an
+`sts:IdentityTokenAudience` condition naming that service, as victoria does
+for `https://api.anthropic.com`. The role's own policy grants the same.
+
 ## Checking a project
 
 Every repo's `check.yml` runs its own pre-commit hooks:
