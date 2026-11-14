@@ -46,6 +46,12 @@ module "freal" {
 
 data "aws_iam_policy_document" "freal_boundary" {
   source_policy_documents = [module.freal_access.boundary_policy_json, module.freal_lambda_access.boundary_policy_json]
+
+  statement {
+    sid       = "WriteEspnCredentials"
+    actions   = ["ssm:PutParameter"]
+    resources = ["arn:aws:ssm:${local.region}:${local.account_id}:parameter/freal/espn/*"]
+  }
 }
 
 data "aws_iam_policy_document" "freal_read" {
