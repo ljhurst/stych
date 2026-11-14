@@ -1,7 +1,6 @@
 locals {
   porto = {
-    lwa_layer     = "arn:aws:lambda:${local.region}:753240598075:layer:LambdaAdapterLayerArm64:*"
-    session_param = "arn:aws:ssm:${local.region}:${local.account_id}:parameter/porto/sommething/session"
+    lwa_layer = "arn:aws:lambda:${local.region}:753240598075:layer:LambdaAdapterLayerArm64:*"
   }
 }
 
@@ -28,6 +27,8 @@ module "porto_lambda_access" {
   account_id       = local.account_id
   region           = local.region
   function_pattern = "lj-porto-mcp*"
+
+  writable_parameters = ["sommething/session"]
 }
 
 module "porto_dynamodb_access" {
@@ -58,12 +59,6 @@ module "porto" {
 
 data "aws_iam_policy_document" "porto_boundary" {
   source_policy_documents = [module.porto_lambda_access.boundary_policy_json, module.porto_dynamodb_access.boundary_policy_json]
-
-  statement {
-    sid       = "RotateSession"
-    actions   = ["ssm:PutParameter"]
-    resources = [local.porto.session_param]
-  }
 }
 
 data "aws_iam_policy_document" "porto_read" {

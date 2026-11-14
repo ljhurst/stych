@@ -3,6 +3,11 @@ locals {
   log_group  = "arn:aws:logs:${var.region}:${var.account_id}:log-group:/aws/lambda/${var.function_pattern}"
   roles      = "arn:aws:iam::${var.account_id}:role/${var.project}-*"
   ssm_params = "arn:aws:ssm:${var.region}:${var.account_id}:parameter/${var.project}/*"
+
+  writable_params = [
+    for name in var.writable_parameters :
+    "arn:aws:ssm:${var.region}:${var.account_id}:parameter/${var.project}/${name}"
+  ]
 }
 
 data "aws_iam_policy_document" "boundary" {
@@ -10,6 +15,16 @@ data "aws_iam_policy_document" "boundary" {
     sid       = "ReadParameters"
     actions   = ["ssm:GetParameter", "ssm:GetParameters"]
     resources = [local.ssm_params]
+  }
+
+  dynamic "statement" {
+    for_each = length(local.writable_params) == 0 ? [] : [1]
+
+    content {
+      sid       = "WriteParameters"
+      actions   = ["ssm:PutParameter"]
+      resources = local.writable_params
+    }
   }
 
   statement {

@@ -22,6 +22,8 @@ module "freal_lambda_access" {
   account_id       = local.account_id
   region           = local.region
   function_pattern = "lj-freal-*"
+
+  writable_parameters = ["espn/*"]
 }
 
 module "freal_resource_groups" {
