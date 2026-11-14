@@ -1,3 +1,9 @@
+locals {
+  freal = {
+    espn_params = "arn:aws:ssm:${local.region}:${local.account_id}:parameter/freal/espn/*"
+  }
+}
+
 module "freal_access" {
   source = "./modules/static-site-access"
 
@@ -50,7 +56,7 @@ data "aws_iam_policy_document" "freal_boundary" {
   statement {
     sid       = "WriteEspnCredentials"
     actions   = ["ssm:PutParameter"]
-    resources = ["arn:aws:ssm:${local.region}:${local.account_id}:parameter/freal/espn/*"]
+    resources = [local.freal.espn_params]
   }
 }
 
