@@ -53,6 +53,16 @@ output "bracket_clash_apply_role_arn" {
   value       = module.bracket_clash.apply_role_arn
 }
 
+output "freal_plan_role_arn" {
+  description = "Role freal's PR plan and site preview jobs assume"
+  value       = module.freal.plan_role_arn
+}
+
+output "freal_apply_role_arn" {
+  description = "Role freal's apply and site deploy jobs assume"
+  value       = module.freal.apply_role_arn
+}
+
 output "dio_plan_role_arn" {
   description = "Role dio's PR plan jobs assume"
   value       = module.dio.plan_role_arn
