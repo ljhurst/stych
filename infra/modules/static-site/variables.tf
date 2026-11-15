@@ -20,6 +20,12 @@ variable "content_security_policy" {
   default     = "default-src 'self'"
 }
 
+variable "spa_fallback" {
+  description = "Serve /index.html, with a 200, for any path that matches no file, for single-page apps whose routes live in the browser"
+  type        = bool
+  default     = false
+}
+
 variable "directory_index" {
   description = "Serve /dir/ and /dir as /dir/index.html, for sites built with one HTML file per page"
   type        = bool

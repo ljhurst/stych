@@ -100,7 +100,9 @@ security headers. It finds the wildcard certificate in `infra/` by domain, so
 the default AWS provider must be `us-east-1`. The bucket lives in the provider's
 region unless you set `region`; CloudFront is unaffected. Set `directory_index = true` for a
 site built with one HTML file per page (such as Astro's default): a CloudFront
-Function then serves `/dir/` and `/dir` as `/dir/index.html`.
+Function then serves `/dir/` and `/dir` as `/dir/index.html`. Set `spa_fallback = true` for a
+single-page app whose routes live in the browser: CloudFront answers any path that matches no
+file with `/index.html` and a 200, so a deep link survives a refresh.
 
 ```hcl
 module "site" {
