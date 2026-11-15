@@ -135,6 +135,17 @@ resource "aws_cloudfront_distribution" "this" {
     }
   }
 
+  dynamic "custom_error_response" {
+    for_each = var.spa_fallback ? [403, 404] : []
+
+    content {
+      error_code            = custom_error_response.value
+      response_code         = 200
+      response_page_path    = "/index.html"
+      error_caching_min_ttl = 0
+    }
+  }
+
   restrictions {
     geo_restriction {
       restriction_type = "none"
