@@ -222,9 +222,9 @@ The account has outbound web identity federation on, so a role can call
 `sts:GetWebIdentityToken` for an AWS-signed JWT and exchange it with a service
 that trusts the account's issuer (the `outbound_identity_issuer` output), in
 place of a stored API key. To let a project's role do it, add a statement to
-its boundary granting `sts:GetWebIdentityToken` with an
-`sts:IdentityTokenAudience` condition naming that service, as victoria does
-for `https://api.anthropic.com`. The role's own policy grants the same.
+its boundary through the `identity-token-access` module, passing that
+service's audience (`https://api.anthropic.com` for Anthropic), as victoria and
+dio do. The role's own policy grants the same.
 
 ## Checking a project
 
