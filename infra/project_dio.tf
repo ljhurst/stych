@@ -22,6 +22,12 @@ module "dio_lambda_access" {
   function_pattern = "lj-dio-*"
 }
 
+module "dio_identity_token_access" {
+  source = "./modules/identity-token-access"
+
+  audiences = ["https://api.anthropic.com"]
+}
+
 module "dio" {
   source = "./modules/project-access"
 
@@ -40,7 +46,7 @@ module "dio" {
 }
 
 data "aws_iam_policy_document" "dio_boundary" {
-  source_policy_documents = [module.dio_lambda_access.boundary_policy_json]
+  source_policy_documents = [module.dio_lambda_access.boundary_policy_json, module.dio_identity_token_access.boundary_policy_json]
 
   statement {
     sid       = "InvokeFunction"

@@ -36,6 +36,12 @@ module "victoria_lambda_access" {
   function_pattern = "lj-victoria-*"
 }
 
+module "victoria_identity_token_access" {
+  source = "./modules/identity-token-access"
+
+  audiences = ["https://api.anthropic.com"]
+}
+
 module "victoria" {
   source = "./modules/project-access"
 
@@ -54,7 +60,7 @@ module "victoria" {
 }
 
 data "aws_iam_policy_document" "victoria_boundary" {
-  source_policy_documents = [module.victoria_lambda_access.boundary_policy_json]
+  source_policy_documents = [module.victoria_lambda_access.boundary_policy_json, module.victoria_identity_token_access.boundary_policy_json]
 
   statement {
     sid       = "ListWiki"
@@ -67,19 +73,6 @@ data "aws_iam_policy_document" "victoria_boundary" {
     actions   = ["s3:GetObject", "s3:PutObject"]
     resources = ["${local.victoria.wiki_bucket}/*"]
   }
-
-  statement {
-    sid       = "AnthropicIdentityToken"
-    actions   = ["sts:GetWebIdentityToken"]
-    resources = ["*"]
-
-    condition {
-      test     = "ForAllValues:StringEquals"
-      variable = "sts:IdentityTokenAudience"
-      values   = ["https://api.anthropic.com"]
-    }
-  }
-
 }
 
 data "aws_iam_policy_document" "victoria_read" {
