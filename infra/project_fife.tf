@@ -33,6 +33,8 @@ module "fife_site_access" {
   bucket_name     = "lj-fife"
   account_id      = local.account_id
   certificate_arn = aws_acm_certificate.wildcard.arn
+
+  previews = module.site_previews.access
 }
 
 module "fife_dynamodb_access" {
@@ -58,6 +60,7 @@ module "fife" {
   read_policy_json     = data.aws_iam_policy_document.fife_read.json
   write_policy_json    = data.aws_iam_policy_document.fife_write.json
   operate_policy_json  = data.aws_iam_policy_document.fife_operate.json
+  plan_policy_jsons    = { preview = module.fife_site_access.preview_policy_json }
 }
 
 data "aws_iam_policy_document" "fife_boundary" {
