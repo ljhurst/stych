@@ -32,6 +32,8 @@ module "aboutme_site_access" {
   bucket_name     = "lj-aboutme"
   account_id      = local.account_id
   certificate_arn = aws_acm_certificate.wildcard.arn
+
+  previews = module.site_previews.access
 }
 
 module "aboutme" {
@@ -49,6 +51,7 @@ module "aboutme" {
   read_policy_json     = data.aws_iam_policy_document.aboutme_read.json
   write_policy_json    = data.aws_iam_policy_document.aboutme_write.json
   operate_policy_json  = data.aws_iam_policy_document.aboutme_operate.json
+  plan_policy_jsons    = { preview = module.aboutme_site_access.preview_policy_json }
 }
 
 data "aws_iam_policy_document" "aboutme_read" {
