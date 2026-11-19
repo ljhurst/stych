@@ -29,6 +29,9 @@ module "lasso_lambda_access" {
   account_id       = local.account_id
   region           = local.region
   function_pattern = "lj-lasso*"
+
+  writable_parameters  = ["client/*"]
+  deletable_parameters = ["client/*"]
 }
 
 module "lasso_dynamodb_access" {

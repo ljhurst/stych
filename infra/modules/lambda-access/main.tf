@@ -8,6 +8,11 @@ locals {
     for name in var.writable_parameters :
     "arn:aws:ssm:${var.region}:${var.account_id}:parameter/${var.project}/${name}"
   ]
+
+  deletable_params = [
+    for name in var.deletable_parameters :
+    "arn:aws:ssm:${var.region}:${var.account_id}:parameter/${var.project}/${name}"
+  ]
 }
 
 data "aws_iam_policy_document" "boundary" {
@@ -24,6 +29,16 @@ data "aws_iam_policy_document" "boundary" {
       sid       = "WriteParameters"
       actions   = ["ssm:PutParameter"]
       resources = local.writable_params
+    }
+  }
+
+  dynamic "statement" {
+    for_each = length(local.deletable_params) == 0 ? [] : [1]
+
+    content {
+      sid       = "DeleteParameters"
+      actions   = ["ssm:DeleteParameter"]
+      resources = local.deletable_params
     }
   }
 
@@ -85,6 +100,16 @@ data "aws_iam_policy_document" "operate" {
     sid       = "ManageParameters"
     actions   = ["ssm:GetParameter", "ssm:GetParameters", "ssm:PutParameter", "ssm:GetParameterHistory"]
     resources = [local.ssm_params]
+  }
+
+  dynamic "statement" {
+    for_each = length(local.deletable_params) == 0 ? [] : [1]
+
+    content {
+      sid       = "DeleteParameters"
+      actions   = ["ssm:DeleteParameter"]
+      resources = local.deletable_params
+    }
   }
 
   statement {

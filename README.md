@@ -377,7 +377,7 @@ everything every project gets:
 - never removing the boundary
 
 A Lambda project's function, log group and parameter rules come from the
-`lambda-access` module (see `project_dio.tf`; `writable_parameters` lets its roles write parameters under `/<name>/`), its DynamoDB tables from the
+`lambda-access` module (see `project_dio.tf`; `writable_parameters` lets its roles write parameters under `/<name>/` and `deletable_parameters` lets them, and its operators, delete them), its DynamoDB tables from the
 `dynamodb-access` module and its `<name>-*` resource groups from the
 `resource-group-access` module (see `project_lasso.tf`); the project file adds
 only what is specific to it. A static site serves from
