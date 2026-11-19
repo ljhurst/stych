@@ -19,6 +19,12 @@ variable "writable_parameters" {
   default     = []
 }
 
+variable "deletable_parameters" {
+  description = "Parameter names, relative to /<project>/ and wildcards allowed (e.g. client/*), that the project's roles and its operators may delete"
+  type        = list(string)
+  default     = []
+}
+
 variable "function_pattern" {
   description = "Name pattern of the project's Lambda functions, e.g. lj-dio-*; their log groups are /aws/lambda/<pattern>"
   type        = string

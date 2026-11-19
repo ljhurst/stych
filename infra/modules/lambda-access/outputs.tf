@@ -1,5 +1,5 @@
 output "boundary_policy_json" {
-  description = "Reads parameters, writes logs and writes the parameters the project lists; the project adds what its own roles need"
+  description = "Reads parameters, writes logs, writes and deletes the parameters the project lists; the project adds what its own roles need"
   value       = data.aws_iam_policy_document.boundary.json
 }
 
@@ -14,6 +14,6 @@ output "write_policy_json" {
 }
 
 output "operate_policy_json" {
-  description = "Local-only access to parameters and logs"
+  description = "Local-only access to parameters (deleting only those the project lists) and logs"
   value       = data.aws_iam_policy_document.operate.json
 }
